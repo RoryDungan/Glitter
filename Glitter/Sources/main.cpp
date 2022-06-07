@@ -2,13 +2,18 @@
 #include "glitter.hpp"
 
 // System Headers
-#include <chrono>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 // Standard Headers
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
+#include <fstream>
+#include <sstream>
+
+#include <filesystem>
+#include <iostream>
 
 // wish I didn't have to do this lol
 std::chrono::steady_clock::time_point t_start;
@@ -32,7 +37,25 @@ void draw() {
     glfwPollEvents();
 }
 
+bool readShaderFile(GLuint shader, GLsizei count, const std::filesystem::path& path) {
+    std::ifstream file(path);
+    if (!file) {
+        return false;
+    }
+    std::stringstream sstr;
+    sstr << file.rdbuf();
+    auto file_contents = sstr.str();
+    const char* shaderSource = file_contents.c_str();
+
+    glShaderSource(shader, count, &shaderSource, NULL);
+    return true;
+}
+
 int main(int argc, char * argv[]) {
+    auto exe_path = std::filesystem::path(argv[0]);
+    std::cout << exe_path << std::endl;
+    std::cout << std::filesystem::current_path() << std::endl;
+
     // Load GLFW and Create a Window
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -74,22 +97,11 @@ int main(int argc, char * argv[]) {
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
 
-    const char* vertexSource = R"glsl(
-        #version 150 core
-
-        in vec2 position;
-        in vec3 color;
-
-        out vec3 Color;
-
-        void main()
-        {
-            Color = color;
-            gl_Position = vec4(position, 0.0, 1.0);
-        }
-    )glsl";
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexSource, NULL);
+    exe_path.replace_filename("drawing.vert");
+    if (!readShaderFile(vertexShader, 1, exe_path)) {
+        return 1;
+    }
     glCompileShader(vertexShader);
     GLint status;
     glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &status);
@@ -101,20 +113,11 @@ int main(int argc, char * argv[]) {
         return 1;
     }
 
-    const char* fragmentSource = R"glsl(
-        #version 150 core
-        
-        in vec3 Color;
-
-        out vec4 outColor;
-
-        void main()
-        {
-            outColor = vec4(Color, 1.0);
-        }
-    )glsl";
     GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
+    exe_path.replace_filename("drawing.frag");
+    if (!readShaderFile(fragmentShader, 1, exe_path)) {
+        return 1;
+    }
     glCompileShader(fragmentShader);
 
     //GLint status;
