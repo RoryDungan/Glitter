@@ -20,6 +20,4 @@ private:
 
     static GLFWwindow* window;
     static std::shared_ptr<Graphics> graphics;
-
-    static bool showDemoWindow;
 };

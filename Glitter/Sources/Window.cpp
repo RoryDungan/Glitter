@@ -8,8 +8,6 @@ GLFWwindow* Window::window;
 
 std::shared_ptr<Graphics> Window::graphics = nullptr;
 
-bool Window::showDemoWindow = true;
-
 Window::Window(std::shared_ptr<Graphics> graphics, int width, int height, const char* title) {
     Window::graphics = graphics;
 
@@ -74,9 +72,7 @@ void Window::Draw() {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    if (showDemoWindow) {
-        ImGui::ShowDemoWindow(&showDemoWindow);
-    }
+    // Add UI stuff here
 
     ImGui::Render();
 
