@@ -1,9 +1,14 @@
 #include "Window.hpp"
 #include <glad/glad.h>
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
 
 GLFWwindow* Window::window;
 
 std::shared_ptr<Graphics> Window::graphics = nullptr;
+
+bool Window::showDemoWindow = true;
 
 Window::Window(std::shared_ptr<Graphics> graphics, int width, int height, const char* title) {
     Window::graphics = graphics;
@@ -27,6 +32,20 @@ Window::Window(std::shared_ptr<Graphics> graphics, int width, int height, const 
     glfwMakeContextCurrent(window);
     gladLoadGL();
     fprintf(stderr, "OpenGL %s\n", glGetString(GL_VERSION));
+
+    // Setup Dear ImGui context
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+    // Setup Deat ImGui style
+    ImGui::StyleColorsDark();
+
+    // Setup Platform/Renderer backends
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 130"); // TODO: should probably check the available version?
 }
 
 void Window::LoopUntilDone() {
@@ -46,9 +65,23 @@ void Window::Draw() {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
+    glfwPollEvents();
+
     graphics->Draw();
+
+    // Render GUI
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    if (showDemoWindow) {
+        ImGui::ShowDemoWindow(&showDemoWindow);
+    }
+
+    ImGui::Render();
+
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     // Flip Buffers and Draw
     glfwSwapBuffers(window);
-    glfwPollEvents();
 }
