@@ -33,9 +33,14 @@ include_directories(Glitter/Headers/
                     Glitter/Vendor/glad/include/
                     Glitter/Vendor/glfw/include/
                     Glitter/Vendor/glm/
+                    Glitter/Vendor/imgui/
+                    Glitter/Vendor/imgui/backends/
                     Glitter/Vendor/stb/)
 
-file(GLOB VENDORS_SOURCES Glitter/Vendor/glad/src/glad.c)
+file(GLOB VENDORS_SOURCES Glitter/Vendor/glad/src/glad.c
+                          Glitter/Vendor/imgui/*.cpp
+                          Glitter/Vendor/imgui/backends/imgui_impl_glfw.cpp
+                          Glitter/Vendor/imgui/backends/imgui_impl_opengl3.cpp)
 file(GLOB PROJECT_HEADERS Glitter/Headers/*.hpp)
 file(GLOB PROJECT_SOURCES Glitter/Sources/*.cpp)
 file(GLOB PROJECT_SHADERS Glitter/Shaders/*.comp
