@@ -1,12 +1,10 @@
 #pragma once
 
 #include <chrono>
-
-#include <filesystem>
-#include <fstream>
-#include <sstream>
+#include <memory>
 
 #include "glitter.hpp"
+#include "Shader.hpp"
 
 class Graphics {
 public:
@@ -17,10 +15,9 @@ public:
 
     ~Graphics();
 private:
-    static bool ReadShaderFile(GLuint shader, GLsizei count, const std::filesystem::path& path);
-    static bool CompileShader(GLuint shader);
-
     std::chrono::steady_clock::time_point startTime;
+    std::chrono::steady_clock::time_point lastFrameTime;
+    std::unique_ptr<Shader> shaderProgram;
 
-    GLuint vbo = 0, vao = 0, shaderProgram = 0, vertexShader = 0, fragmentShader = 0;
+    GLuint vbo = 0, vao = 0;
 };

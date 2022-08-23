@@ -28,6 +28,7 @@ Window::Window(std::shared_ptr<Graphics> graphics, int width, int height, const 
     //}
 
     glfwMakeContextCurrent(window);
+    glfwSwapInterval(0);
     gladLoadGL();
     fprintf(stderr, "OpenGL %s\n", glGetString(GL_VERSION));
 
@@ -65,12 +66,12 @@ void Window::Draw() {
 
     glfwPollEvents();
 
-    graphics->Draw();
-
     // Render GUI
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
+
+    graphics->Draw();
 
     // Add UI stuff here
 
