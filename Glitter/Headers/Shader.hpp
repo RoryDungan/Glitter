@@ -13,7 +13,7 @@ public:
         glDeleteProgram(program);
     }
 
-    GLuint AttachShader(const std::filesystem::path& path);
+    void AttachShader(const std::filesystem::path& path);
     
     GLuint Get() {
         return program;

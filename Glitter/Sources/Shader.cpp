@@ -3,7 +3,7 @@
 #include <sstream>
 
 
-GLuint Shader::AttachShader(const std::filesystem::path& path) {
+void Shader::AttachShader(const std::filesystem::path& path) {
     auto extension = path.extension();
     GLuint shader;
     if (extension == ".frag") {
@@ -31,7 +31,9 @@ void Shader::Link() {
         glGetProgramiv(program, GL_INFO_LOG_LENGTH, &messageLength);
         std::unique_ptr<char[]> buffer(new char[messageLength]);
         glGetProgramInfoLog(program, messageLength, nullptr, buffer.get());
-        throw std::runtime_error(std::strcat("Error linking program: ", buffer.get()));
+        std::ostringstream msg;
+        msg << "Error linking program: " << buffer.get();
+        throw std::runtime_error(msg.str());
     }
 }
 
@@ -56,7 +58,9 @@ void Shader::CompileShader(GLuint shader) {
         GLint messageLength;
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &messageLength);
         std::unique_ptr<char[]> buffer(new char[messageLength]);
-        glGetShaderInfoLog(shader, 512, NULL, buffer.get());
-        throw std::runtime_error(std::strcat("Error compiling shader: ", buffer.get()));
+        glGetShaderInfoLog(shader, messageLength, NULL, buffer.get());
+        std::ostringstream msg;
+        msg << "Error compiling shader: " << buffer.get();
+        throw std::runtime_error(msg.str());
     }
 }

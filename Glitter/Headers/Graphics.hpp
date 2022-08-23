@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <memory>
+#include <glm/glm.hpp>
 
 #include "glitter.hpp"
 #include "Shader.hpp"
@@ -18,6 +19,9 @@ private:
     std::chrono::steady_clock::time_point startTime;
     std::chrono::steady_clock::time_point lastFrameTime;
     std::unique_ptr<Shader> shaderProgram;
+    
+    glm::mat4 trans = glm::mat4(1.0f);
+    GLint uniTrans;
 
     GLuint vbo = 0, vao = 0;
 };

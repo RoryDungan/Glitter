@@ -1,3 +1,4 @@
+#include <glm/glm.hpp>
 #include "Graphics.hpp"
 #include "stb_image.h"
 #include "imgui.h"
@@ -68,6 +69,9 @@ void Graphics::Init() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    uniTrans = glGetUniformLocation(shaderProgram->Get(), "trans");
+    glUniformMatrix4fv(uniTrans, 1, GL_FALSE, glm::value_ptr(trans));
 
     startTime, lastFrameTime = std::chrono::high_resolution_clock::now();
 }
@@ -77,6 +81,10 @@ void Graphics::Draw() {
     auto time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - startTime).count();
     auto deltaTime = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - lastFrameTime).count();
 
+    trans = glm::rotate(trans, deltaTime, glm::vec3(0.0f, 0.0f, 1.0f));
+    glUniformMatrix4fv(uniTrans, 1, GL_FALSE, glm::value_ptr(trans));
+
+    
     // Background Fill Color
     glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);

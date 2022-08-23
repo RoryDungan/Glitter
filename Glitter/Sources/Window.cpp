@@ -28,7 +28,6 @@ Window::Window(std::shared_ptr<Graphics> graphics, int width, int height, const 
     //}
 
     glfwMakeContextCurrent(window);
-    glfwSwapInterval(0);
     gladLoadGL();
     fprintf(stderr, "OpenGL %s\n", glGetString(GL_VERSION));
 
@@ -44,7 +43,7 @@ Window::Window(std::shared_ptr<Graphics> graphics, int width, int height, const 
 
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 130"); // TODO: should probably check the available version?
+    ImGui_ImplOpenGL3_Init("#version 150 core"); // TODO: should probably check the available version?
 }
 
 void Window::LoopUntilDone() {
