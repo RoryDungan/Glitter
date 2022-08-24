@@ -12,8 +12,10 @@ class Graphics {
 public:
     Graphics() { }
 
-    void Init();
+    void Init(glm::ivec2 windowSize);
     void Draw();
+
+    void UpdateAspect(glm::ivec2 windowSize);
 
     ~Graphics();
 private:
@@ -21,7 +23,7 @@ private:
     std::chrono::steady_clock::time_point lastFrameTime;
     std::unique_ptr<Shader> shaderProgram;
     
-    GLint uniModel;
+    GLint uniModel, uniProj;
 
     GLuint vbo = 0, vao = 0;
 

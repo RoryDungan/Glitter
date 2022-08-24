@@ -6,15 +6,52 @@
 
 using namespace glm;
 
-void Graphics::Init() {
-
+void Graphics::Init(ivec2 windowSize) {
     try {
-        float vertices[] = {
-            //  Position      Color             Texcoords
-                -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // Top-left
-                 0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, // Top-right
-                 0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, // Bottom-right
-                -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f  // Bottom-left
+        glEnable(GL_DEPTH_TEST);
+
+        GLfloat vertices[] = {
+            -0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+             0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+             0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+             0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+            -0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+
+            -0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+             0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+             0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+             0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+            -0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+            -0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+
+            -0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+            -0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+            -0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+            -0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+
+             0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+             0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+             0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+             0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+             0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+             0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+
+            -0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+             0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+             0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+             0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+            -0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+            -0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+
+            -0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+             0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+             0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+             0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+            -0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+            -0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f
         };
 
         glGenVertexArrays(1, &vao);
@@ -25,16 +62,16 @@ void Graphics::Init() {
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
         // Create an element array
-        GLuint ebo;
-        glGenBuffers(1, &ebo);
+        //GLuint ebo;
+        //glGenBuffers(1, &ebo);
 
-        GLuint elements[] = {
-            0, 1, 2,
-            2, 3, 0
-        };
+        //GLuint elements[] = {
+        //    0, 1, 2,
+        //    2, 3, 0
+        //};
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
+        //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+        //glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
 
         shaderProgram = std::make_unique<Shader>();
         shaderProgram->AttachShader("drawing.vert");
@@ -63,7 +100,13 @@ void Graphics::Init() {
         glBindTexture(GL_TEXTURE_2D, tex);
 
         int imgWidth, imgHeight, imgBitsPerPixel;
-        auto* textureData = stbi_load("vinny.jpg", &imgWidth, &imgHeight, &imgBitsPerPixel, 0);
+        auto* textureData = stbi_load(
+            "vinny.jpg", 
+            &imgWidth, 
+            &imgHeight, 
+            &imgBitsPerPixel, 
+            0
+        );
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imgWidth, imgHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, textureData);
         stbi_image_free(textureData);
 
@@ -86,9 +129,8 @@ void Graphics::Init() {
         auto uniView = glGetUniformLocation(shaderProgram->Get(), "view");
         glUniformMatrix4fv(uniView, 1, GL_FALSE, value_ptr(view));
 
-        auto proj = perspective(radians(45.f), 800.f / 600.f, 1.f, 10.f);
-        auto uniProj = glGetUniformLocation(shaderProgram->Get(), "proj");
-        glUniformMatrix4fv(uniProj, 1, GL_FALSE, value_ptr(proj));
+        uniProj = glGetUniformLocation(shaderProgram->Get(), "proj");
+        UpdateAspect(windowSize);
 
         startTime, lastFrameTime = std::chrono::high_resolution_clock::now();
     }
@@ -98,10 +140,20 @@ void Graphics::Init() {
     }
 }
 
+void Graphics::UpdateAspect(ivec2 windowSize) {
+    auto proj = perspective(
+        radians(45.f), 
+        (float)windowSize.x / (float)windowSize.y, 
+        1.f, 
+        10.f
+    );
+    glUniformMatrix4fv(uniProj, 1, GL_FALSE, value_ptr(proj));
+}
+
 void Graphics::Draw() {
     // Background Fill Color
     glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     if (!error.empty()) {
         ImGui::Begin("Error");
@@ -119,7 +171,8 @@ void Graphics::Draw() {
     glUniformMatrix4fv(uniModel, 1, GL_FALSE, value_ptr(model));
 
 
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
 
     ImGui::Begin("FPS");
     ImGui::Text("%.2f ms\n%.2f FPS", deltaTime * 1000.0f, 1.0f / deltaTime);

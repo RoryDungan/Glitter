@@ -14,7 +14,7 @@ int main(int argc, char * argv[]) {
     auto graphics = std::make_shared<Graphics>();
 
     Window window(graphics, mWidth, mHeight, "OpenGL");
-    graphics->Init();
+    graphics->Init(glm::ivec2(mWidth, mHeight));
     window.LoopUntilDone();
 
     return EXIT_SUCCESS;

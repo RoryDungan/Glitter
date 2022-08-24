@@ -56,6 +56,7 @@ void Window::LoopUntilDone() {
 
 void Window::OnResize(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
+    graphics->UpdateAspect(glm::ivec2(width, height));
     Draw();
 }
 
