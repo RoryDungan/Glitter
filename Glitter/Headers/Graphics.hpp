@@ -3,6 +3,7 @@
 #include <chrono>
 #include <memory>
 #include <glm/glm.hpp>
+#include <string>
 
 #include "glitter.hpp"
 #include "Shader.hpp"
@@ -24,4 +25,6 @@ private:
     GLint uniTrans;
 
     GLuint vbo = 0, vao = 0;
+
+    std::string error;
 };

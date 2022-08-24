@@ -29,10 +29,10 @@ void Shader::Link() {
     if (status == GL_FALSE) {
         GLint messageLength;
         glGetProgramiv(program, GL_INFO_LOG_LENGTH, &messageLength);
-        std::unique_ptr<char[]> buffer(new char[messageLength]);
-        glGetProgramInfoLog(program, messageLength, nullptr, buffer.get());
+        std::vector<char> buffer(messageLength);
+        glGetProgramInfoLog(program, messageLength, nullptr, buffer.data());
         std::ostringstream msg;
-        msg << "Error linking program: " << buffer.get();
+        msg << "Error linking program: " << buffer.data();
         throw std::runtime_error(msg.str());
     }
 }
@@ -57,10 +57,10 @@ void Shader::CompileShader(GLuint shader) {
     if (status != GL_TRUE) {
         GLint messageLength;
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &messageLength);
-        std::unique_ptr<char[]> buffer(new char[messageLength]);
-        glGetShaderInfoLog(shader, messageLength, NULL, buffer.get());
+        std::vector<char> buffer(messageLength);
+        glGetShaderInfoLog(shader, messageLength, NULL, buffer.data());
         std::ostringstream msg;
-        msg << "Error compiling shader: " << buffer.get();
+        msg << "Error compiling shader: " << buffer.data();
         throw std::runtime_error(msg.str());
     }
 }
