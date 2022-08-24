@@ -21,8 +21,7 @@ private:
     std::chrono::steady_clock::time_point lastFrameTime;
     std::unique_ptr<Shader> shaderProgram;
     
-    glm::mat4 trans = glm::mat4(1.0f);
-    GLint uniTrans;
+    GLint uniModel;
 
     GLuint vbo = 0, vao = 0;
 

@@ -4,6 +4,8 @@
 #include "stb_image.h"
 #include "imgui.h"
 
+using namespace glm;
+
 void Graphics::Init() {
 
     try {
@@ -72,8 +74,21 @@ void Graphics::Init() {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        uniTrans = glGetUniformLocation(shaderProgram->Get(), "trans");
-        glUniformMatrix4fv(uniTrans, 1, GL_FALSE, glm::value_ptr(trans));
+        auto model = mat4(1.f);
+        uniModel = glGetUniformLocation(shaderProgram->Get(), "model");
+        glUniformMatrix4fv(uniModel, 1, GL_FALSE, value_ptr(model));
+
+        auto view = lookAt(
+            vec3(1.2f, 1.2f, 1.2f),
+            vec3(0.f, 0.f, 0.f),
+            vec3(0.f, 0.f, 1.f)
+        );
+        auto uniView = glGetUniformLocation(shaderProgram->Get(), "view");
+        glUniformMatrix4fv(uniView, 1, GL_FALSE, value_ptr(view));
+
+        auto proj = perspective(radians(45.f), 800.f / 600.f, 1.f, 10.f);
+        auto uniProj = glGetUniformLocation(shaderProgram->Get(), "proj");
+        glUniformMatrix4fv(uniProj, 1, GL_FALSE, value_ptr(proj));
 
         startTime, lastFrameTime = std::chrono::high_resolution_clock::now();
     }
@@ -99,8 +114,9 @@ void Graphics::Draw() {
     auto time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - startTime).count();
     auto deltaTime = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - lastFrameTime).count();
 
-    trans = glm::rotate(trans, deltaTime, glm::vec3(0.0f, 0.0f, 1.0f));
-    glUniformMatrix4fv(uniTrans, 1, GL_FALSE, glm::value_ptr(trans));
+    auto model = mat4(1.0f);
+    model = rotate(model, time * radians(180.f), vec3(0.f, 0.f, 1.f));
+    glUniformMatrix4fv(uniModel, 1, GL_FALSE, value_ptr(model));
 
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
