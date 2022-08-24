@@ -7,13 +7,12 @@ in vec2 texcoord;
 out vec3 Normal;
 out vec2 Texcoord;
 
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 proj;
+uniform mat4 modelViewProjection;
+uniform mat3 modelInverseTranspose;
 
 void main()
 {
-	Normal = mat3(model) * normal;
+	Normal = modelInverseTranspose * normal;
 	Texcoord = texcoord;
-	gl_Position = proj * view * model * vec4(position, 1.0);
+	gl_Position = modelViewProjection * vec4(position, 1.0);
 }

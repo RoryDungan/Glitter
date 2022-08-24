@@ -111,23 +111,24 @@ void Graphics::Init(ivec2 windowSize) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        auto model = mat4(1.f);
-        uniModel = glGetUniformLocation(shaderProgram->Get(), "model");
-        glUniformMatrix4fv(uniModel, 1, GL_FALSE, value_ptr(model));
+        modelViewProjectionLocation = 
+            glGetUniformLocation(shaderProgram->Get(), "modelViewProjection");
+        modelInverseTransposeLocation = 
+            glGetUniformLocation(shaderProgram->Get(), "modelInverseTranspose");
 
-        auto view = lookAt(
+        model = mat4(1.f);
+        view = lookAt(
             vec3(1.2f, 1.2f, 1.2f),
             vec3(0.f, 0.f, 0.f),
             vec3(0.f, 0.f, 1.f)
         );
-        auto uniView = glGetUniformLocation(shaderProgram->Get(), "view");
-        glUniformMatrix4fv(uniView, 1, GL_FALSE, value_ptr(view));
-
-        uniProj = glGetUniformLocation(shaderProgram->Get(), "proj");
         UpdateAspect(windowSize);
 
-        auto uniReverseLightDirection = glGetUniformLocation(shaderProgram->Get(), "reverseLightDirection");
+        auto modelInverseTranspose = mat3(transpose(inverse(model)));
+        glUniformMatrix3fv(modelInverseTransposeLocation, 1, GL_FALSE, value_ptr(modelInverseTranspose));
+
         // set the light direction.
+        auto uniReverseLightDirection = glGetUniformLocation(shaderProgram->Get(), "reverseLightDirection");
         auto lightDir = normalize(vec3(0.5, 0.7, 1));
         glUniform3fv(uniReverseLightDirection, 1, value_ptr(lightDir));
 
@@ -141,13 +142,14 @@ void Graphics::Init(ivec2 windowSize) {
 }
 
 void Graphics::UpdateAspect(ivec2 windowSize) {
-    auto proj = perspective(
+    proj = perspective(
         radians(45.f), 
         (float)windowSize.x / (float)windowSize.y, 
         1.f, 
         10.f
     );
-    glUniformMatrix4fv(uniProj, 1, GL_FALSE, value_ptr(proj));
+    auto mvp = proj * view * model;
+    glUniformMatrix4fv(modelViewProjectionLocation, 1, GL_FALSE, value_ptr(mvp));
 }
 
 void Graphics::Draw() {
@@ -166,9 +168,12 @@ void Graphics::Draw() {
     auto time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - startTime).count();
     auto deltaTime = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - lastFrameTime).count();
 
-    auto model = mat4(1.0f);
+    model = mat4(1.0f);
     model = rotate(model, time * radians(45.f), vec3(0.f, 0.f, 1.f));
-    glUniformMatrix4fv(uniModel, 1, GL_FALSE, value_ptr(model));
+    auto mvp = proj * view * model;
+    glUniformMatrix4fv(modelViewProjectionLocation, 1, GL_FALSE, value_ptr(mvp));
+    auto modelInverseTranspose = mat3(transpose(inverse(model)));
+    glUniformMatrix3fv(modelInverseTransposeLocation, 1, GL_FALSE, value_ptr(modelInverseTranspose));
 
 
     //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);

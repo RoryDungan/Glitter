@@ -23,9 +23,12 @@ private:
     std::chrono::steady_clock::time_point lastFrameTime;
     std::unique_ptr<Shader> shaderProgram;
     
-    GLint uniModel, uniProj;
+    // uniform locations
+    GLint modelViewProjectionLocation, modelInverseTransposeLocation;
 
     GLuint vbo = 0, vao = 0;
+
+    glm::mat4 model, view, proj;
 
     std::string error;
 };
