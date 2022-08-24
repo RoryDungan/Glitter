@@ -82,17 +82,11 @@ void Graphics::Init(ivec2 windowSize) {
         shaderProgram->Link();
         shaderProgram->Activate();
 
-        GLint posAttrib = glGetAttribLocation(shaderProgram->Get(), "position");
-        glEnableVertexAttribArray(posAttrib);
-        glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(float), 0);
-
-        GLint colAttrib = glGetAttribLocation(shaderProgram->Get(), "color");
-        glEnableVertexAttribArray(colAttrib);
-        glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(2 * sizeof(float)));
-
-        GLint texcoordAttrib = glGetAttribLocation(shaderProgram->Get(), "texcoord");
-        glEnableVertexAttribArray(texcoordAttrib);
-        glVertexAttribPointer(texcoordAttrib, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(5 * sizeof(float)));
+        shaderProgram->SetupVertexAttribs({
+            {"position", 3, GL_FLOAT},
+            {"color", 3, GL_FLOAT},
+            {"texcoord", 2, GL_FLOAT},
+        });
 
         GLuint tex;
         glGenTextures(1, &tex);

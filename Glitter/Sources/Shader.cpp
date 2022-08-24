@@ -2,6 +2,12 @@
 #include <fstream>
 #include <sstream>
 
+struct VertexAttribPointerSettings {
+    GLint attrib;
+    GLint size;
+    GLenum type;
+    int pointer;
+};
 
 void Shader::AttachShader(const std::filesystem::path& path) {
     auto extension = path.extension();
@@ -34,6 +40,41 @@ void Shader::Link() {
         std::ostringstream msg;
         msg << "Error linking program: " << buffer.data();
         throw std::runtime_error(msg.str());
+    }
+}
+
+void Shader::SetupVertexAttribs(std::vector<VertexAttribInfo> vertexAttribs) {
+    std::vector<VertexAttribPointerSettings> vertexAttribPointers(vertexAttribs.size());
+
+    int sizeSoFar = 0;
+    for (auto i = 0; i < vertexAttribs.size(); ++i) {
+        auto& vertexAttribInfo = vertexAttribs[i];
+        auto name = vertexAttribInfo.name.c_str();
+        vertexAttribPointers[i] = {
+            glGetAttribLocation(program, name),
+            vertexAttribInfo.size,
+            vertexAttribInfo.type,
+            sizeSoFar
+        };
+        switch (vertexAttribInfo.type) {
+        case GL_FLOAT:
+            sizeSoFar += vertexAttribInfo.size * sizeof(float);
+            break;
+        default:
+            throw std::out_of_range("Unknown type");
+        }
+    }
+
+    for (auto& vertexAttribPtr : vertexAttribPointers) {
+        glEnableVertexAttribArray(vertexAttribPtr.attrib);
+        glVertexAttribPointer(
+            vertexAttribPtr.attrib,
+            vertexAttribPtr.size,
+            vertexAttribPtr.type,
+            GL_FALSE,
+            sizeSoFar,
+            (void*)vertexAttribPtr.pointer
+        );
     }
 }
 
