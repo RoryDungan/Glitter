@@ -24,7 +24,7 @@ private:
     std::unique_ptr<Shader> shaderProgram;
     
     // uniform locations
-    GLint modelViewProjectionLocation, modelInverseTransposeLocation;
+    GLint modelLocation, modelViewProjectionLocation, modelInverseTransposeLocation;
 
     GLuint vbo = 0, vao = 0;
 
