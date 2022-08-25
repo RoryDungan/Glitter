@@ -88,24 +88,41 @@ void Graphics::Init(ivec2 windowSize) {
             {"texcoord", 2, GL_FLOAT},
         });
 
-        GLuint tex;
-        glGenTextures(1, &tex);
+        GLuint textures[2];
+        glGenTextures(2, textures);
+        
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, tex);
-
+        glBindTexture(GL_TEXTURE_2D, textures[0]);
         int imgWidth, imgHeight, imgBitsPerPixel;
         auto* textureData = stbi_load(
-            "metal.jpg", 
-            &imgWidth, 
-            &imgHeight, 
-            &imgBitsPerPixel, 
+            "metal.jpg",
+            &imgWidth,
+            &imgHeight,
+            &imgBitsPerPixel,
             0
         );
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imgWidth, imgHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, textureData);
         stbi_image_free(textureData);
-
         glUniform1i(glGetUniformLocation(shaderProgram->Get(), "tex"), 0);
-
+        
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, textures[1]);
+        textureData = stbi_load(
+            "metal_norm.jpg",
+            &imgWidth,
+            &imgHeight,
+            &imgBitsPerPixel,
+            0
+        );
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imgWidth, imgHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, textureData);
+        stbi_image_free(textureData);
+        glUniform1i(glGetUniformLocation(shaderProgram->Get(), "normalMap"), 1);
+        
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -175,7 +192,7 @@ void Graphics::Draw() {
     glUniformMatrix4fv(modelViewProjectionLocation, 1, GL_FALSE, value_ptr(mvp));
     auto modelInverseTranspose = mat3(transpose(inverse(model)));
     glUniformMatrix3fv(modelInverseTransposeLocation, 1, GL_FALSE, value_ptr(modelInverseTranspose));
-
+    
 
     //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glDrawArrays(GL_TRIANGLES, 0, 36);

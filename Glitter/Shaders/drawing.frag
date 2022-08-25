@@ -6,6 +6,7 @@ in vec2 Texcoord;
 out vec4 outColor;
 
 uniform sampler2D tex;
+uniform sampler2D normalMap;
 
 uniform vec3 reverseLightDirection;
 
@@ -22,6 +23,6 @@ void main()
 
 	// Lets multiply just the color portion (not the alpha)
 	// by the light
-	outColor = texture(tex, Texcoord);// * vec4(Color, 1.0);
+	outColor = mix(texture(tex, Texcoord), texture(normalMap, Texcoord), 1);
 	outColor.rgb *= light;
 }
