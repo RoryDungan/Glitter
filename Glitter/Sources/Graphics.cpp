@@ -133,7 +133,7 @@ void Graphics::Init(ivec2 windowSize) {
         glUniform3fv(uniReverseLightDirection, 1, value_ptr(lightDir));
 
 
-        startTime, lastFrameTime = std::chrono::high_resolution_clock::now();
+        startTime = lastFrameTime = std::chrono::high_resolution_clock::now();
     }
     catch (std::runtime_error ex) {
         error = ex.what();
@@ -159,14 +159,15 @@ void Graphics::Draw() {
 
     if (!error.empty()) {
         ImGui::Begin("Error");
-        ImGui::Text(error.c_str());
+        ImGui::Text("%s", error.c_str());
         ImGui::End();
         return;
     }
 
+    using seconds = std::chrono::duration<float>;
     auto t_now = std::chrono::high_resolution_clock::now();
-    auto time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - startTime).count();
-    auto deltaTime = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - lastFrameTime).count();
+    auto time = seconds(t_now - startTime).count();
+    auto deltaTime = seconds(t_now - lastFrameTime).count();
 
     model = mat4(1.0f);
     model = rotate(model, time * radians(45.f), vec3(0.f, 0.f, 1.f));
