@@ -1,6 +1,7 @@
 #include "Shader.hpp"
 #include <fstream>
 #include <sstream>
+#include "stb_image.h"
 
 struct VertexAttribPointerSettings {
     GLint attrib;
@@ -47,7 +48,7 @@ void Shader::SetupVertexAttribs(std::vector<VertexAttribInfo> vertexAttribs) {
     std::vector<VertexAttribPointerSettings> vertexAttribPointers(vertexAttribs.size());
 
     int sizeSoFar = 0;
-    for (auto i = 0; i < vertexAttribs.size(); ++i) {
+    for (size_t i = 0; i < vertexAttribs.size(); ++i) {
         auto& vertexAttribInfo = vertexAttribs[i];
         auto name = vertexAttribInfo.name.c_str();
         vertexAttribPointers[i] = {
@@ -75,6 +76,33 @@ void Shader::SetupVertexAttribs(std::vector<VertexAttribInfo> vertexAttribs) {
             sizeSoFar,
             (void*)vertexAttribPtr.pointer
         );
+    }
+}
+
+void Shader::BindTextures(std::vector<TexSettings> textureSettings) {
+    std::vector<GLuint> textures(textureSettings.size());
+    glGenTextures(textureSettings.size(), textures.data());
+    
+    for (size_t i = 0; i < textureSettings.size(); ++i) {
+        glActiveTexture(GL_TEXTURE0 + i);
+        glBindTexture(GL_TEXTURE_2D, textures[i]);
+        
+        int imgWidth, imgHeight, imgBitsPerPixel;
+        auto* textureData = stbi_load(
+            textureSettings[i].path.c_str(),
+            &imgWidth,
+            &imgHeight,
+            &imgBitsPerPixel,
+            0
+        );
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imgWidth, imgHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, textureData);
+        stbi_image_free(textureData);
+        
+        glUniform1i(glGetUniformLocation(program, textureSettings[i].uniformName.c_str()), i);
+        
+        for (auto& param : textureSettings[i].params) {
+            glTexParameteri(GL_TEXTURE_2D, param.first, param.second);
+        }
     }
 }
 

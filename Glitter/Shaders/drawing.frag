@@ -23,6 +23,6 @@ void main()
 
 	// Lets multiply just the color portion (not the alpha)
 	// by the light
-	outColor = mix(texture(tex, Texcoord), texture(normalMap, Texcoord), 1);
+	outColor = mix(texture(tex, Texcoord), texture(normalMap, Texcoord), 0);
 	outColor.rgb *= light;
 }

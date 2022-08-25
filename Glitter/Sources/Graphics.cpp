@@ -87,46 +87,29 @@ void Graphics::Init(ivec2 windowSize) {
             {"normal", 3, GL_FLOAT},
             {"texcoord", 2, GL_FLOAT},
         });
-
-        GLuint textures[2];
-        glGenTextures(2, textures);
         
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, textures[0]);
-        int imgWidth, imgHeight, imgBitsPerPixel;
-        auto* textureData = stbi_load(
-            "metal.jpg",
-            &imgWidth,
-            &imgHeight,
-            &imgBitsPerPixel,
-            0
-        );
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imgWidth, imgHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, textureData);
-        stbi_image_free(textureData);
-        glUniform1i(glGetUniformLocation(shaderProgram->Get(), "tex"), 0);
-        
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, textures[1]);
-        textureData = stbi_load(
-            "metal_norm.jpg",
-            &imgWidth,
-            &imgHeight,
-            &imgBitsPerPixel,
-            0
-        );
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imgWidth, imgHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, textureData);
-        stbi_image_free(textureData);
-        glUniform1i(glGetUniformLocation(shaderProgram->Get(), "normalMap"), 1);
-        
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        shaderProgram->BindTextures({
+            {
+                "metal.jpg",
+                "tex",
+                {
+                    {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
+                    {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE},
+                    {GL_TEXTURE_MIN_FILTER, GL_LINEAR},
+                    {GL_TEXTURE_MAG_FILTER, GL_LINEAR}
+                }
+            },
+            {
+                "metal_norm.jpg",
+                "normalMap",
+                {
+                    {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
+                    {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE},
+                    {GL_TEXTURE_MIN_FILTER, GL_LINEAR},
+                    {GL_TEXTURE_MAG_FILTER, GL_LINEAR}
+                }
+            },
+        });
 
         modelViewProjectionLocation = 
             glGetUniformLocation(shaderProgram->Get(), "modelViewProjection");

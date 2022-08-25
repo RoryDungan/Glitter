@@ -11,6 +11,12 @@ struct VertexAttribInfo {
     GLenum type;
 };
 
+struct TexSettings {
+    std::filesystem::path path;
+    std::string uniformName;
+    std::map<GLenum, GLint> params;
+};
+
 class Shader {
 public:
     Shader() {
@@ -27,6 +33,7 @@ public:
         glUseProgram(program);
     }
     void SetupVertexAttribs(std::vector<VertexAttribInfo> vertexAttribs);
+    void BindTextures(std::vector<TexSettings> textures);
     
     GLuint Get() {
         return program;
