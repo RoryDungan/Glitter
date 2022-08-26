@@ -89,7 +89,7 @@ void Shader::BindTextures(std::vector<TexSettings> textureSettings) {
         
         int imgWidth, imgHeight, imgBitsPerPixel;
         auto* textureData = stbi_load(
-            textureSettings[i].path.c_str(),
+            textureSettings[i].path.string().c_str(),
             &imgWidth,
             &imgHeight,
             &imgBitsPerPixel,

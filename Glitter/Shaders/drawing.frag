@@ -18,7 +18,7 @@ void main()
 	//vec3 normal = normalize(Normal);
 
     vec3 normal = texture(normalMap, Texcoord).rgb;
-    normal = normalize(normal * 2.0 - 1); // Convert from 0..1 to -1..1
+    normal = normal * 2.0 - 1; // Convert from 0..1 to -1..1
     normal = normalize(TBN * normal); // transform from tangent to world space
 
 	// compute the light by taking the dot product
@@ -29,6 +29,4 @@ void main()
 	// by the light
 	outColor = texture(tex, Texcoord);
 	outColor.rgb *= light;
-
-    outColor.rgb = (normal + 1) / 2;
 }

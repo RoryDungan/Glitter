@@ -102,8 +102,6 @@ void Graphics::Init(ivec2 windowSize) {
             },
         });
 
-        modelLocation =
-            glGetUniformLocation(shaderProgram->Get(), "model");
         modelViewProjectionLocation =
             glGetUniformLocation(shaderProgram->Get(), "modelViewProjection");
         modelInverseTransposeLocation = 
@@ -111,7 +109,7 @@ void Graphics::Init(ivec2 windowSize) {
 
         model = mat4(1.f);
         view = lookAt(
-            vec3(0.f, 1.f, 1.f),
+            vec3(0.f, 1.5f, 1.5f),
             vec3(0.f, 0.f, 0.f),
             vec3(0.f, 0.f, 1.f)
         );
@@ -119,7 +117,6 @@ void Graphics::Init(ivec2 windowSize) {
 
         auto modelInverseTranspose = mat3(transpose(inverse(model)));
         glUniformMatrix3fv(modelInverseTransposeLocation, 1, GL_FALSE, value_ptr(modelInverseTranspose));
-        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, value_ptr(model));
 
         // set the light direction.
         auto uniReverseLightDirection = glGetUniformLocation(shaderProgram->Get(), "reverseLightDirection");
@@ -168,7 +165,6 @@ void Graphics::Draw() {
     auto mvp = proj * view * model;
     glUniformMatrix4fv(modelViewProjectionLocation, 1, GL_FALSE, value_ptr(mvp));
     auto modelInverseTranspose = mat3(transpose(inverse(model)));
-    glUniformMatrix4fv(modelLocation, 1, GL_FALSE, value_ptr(model));
     glUniformMatrix3fv(modelInverseTransposeLocation, 1, GL_FALSE, value_ptr(modelInverseTranspose));
     
 
