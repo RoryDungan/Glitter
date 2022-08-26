@@ -67,6 +67,9 @@ target_link_libraries(${PROJECT_NAME} assimp glfw
                       ${GLFW_LIBRARIES} ${GLAD_LIBRARIES})
 set_target_properties(${PROJECT_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME})
+if(MSVC)
+    set_target_properties(${PROJECT_NAME} PROPERTIES VS_GLOBAL_DisableFastUpToDateCheck True)
+endif()
 
 add_custom_command(
     TARGET ${PROJECT_NAME} POST_BUILD
