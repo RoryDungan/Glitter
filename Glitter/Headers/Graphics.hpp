@@ -1,12 +1,12 @@
 #pragma once
 
-#include <chrono>
 #include <memory>
 #include <glm/glm.hpp>
 #include <string>
 
 #include "glitter.hpp"
 #include "Shader.hpp"
+#include "Timer.hpp"
 
 class Graphics {
 public:
@@ -19,8 +19,7 @@ public:
 
     ~Graphics();
 private:
-    std::chrono::steady_clock::time_point startTime;
-    std::chrono::steady_clock::time_point lastFrameTime;
+    Timer timer;
     std::unique_ptr<Shader> shaderProgram;
     
     // uniform locations

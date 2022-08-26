@@ -123,8 +123,7 @@ void Graphics::Init(ivec2 windowSize) {
         auto lightDir = normalize(vec3(0.5, 0.7, 1));
         glUniform3fv(uniReverseLightDirection, 1, value_ptr(lightDir));
 
-
-        startTime = lastFrameTime = std::chrono::high_resolution_clock::now();
+        timer.Start();
     }
     catch (std::runtime_error ex) {
         error = ex.what();
@@ -144,6 +143,10 @@ void Graphics::UpdateAspect(ivec2 windowSize) {
 }
 
 void Graphics::Draw() {
+    timer.Update();
+    auto time = timer.GetTime();
+    auto deltaTime = timer.GetDelta();
+
     // Background Fill Color
     glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -155,10 +158,6 @@ void Graphics::Draw() {
         return;
     }
 
-    using seconds = std::chrono::duration<float>;
-    auto t_now = std::chrono::high_resolution_clock::now();
-    auto time = seconds(t_now - startTime).count();
-    auto deltaTime = seconds(t_now - lastFrameTime).count();
 
     model = mat4(1.0f);
     model = rotate(model, time * radians(45.f), vec3(0.f, 0.f, 1.f));
@@ -174,8 +173,6 @@ void Graphics::Draw() {
     ImGui::Begin("FPS");
     ImGui::Text("%.2f ms\n%.2f FPS", deltaTime * 1000.0f, 1.0f / deltaTime);
     ImGui::End();
-
-    lastFrameTime = std::chrono::high_resolution_clock::now();
 }
 
 Graphics::~Graphics() {
