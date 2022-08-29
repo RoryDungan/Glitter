@@ -25,7 +25,9 @@ private:
     // uniform locations
     GLint modelViewProjectionLocation, modelInverseTransposeLocation;
 
-    GLuint vbo = 0, vao = 0;
+    GLuint vbo = 0, vao = 0, ebo = 0;
+    
+    unsigned int numElements;
 
     glm::mat4 model, view, proj;
 
