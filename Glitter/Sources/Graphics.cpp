@@ -121,12 +121,17 @@ void Graphics::Init(ivec2 windowSize) {
             glGetUniformLocation(shaderProgram->Get(), "modelInverseTranspose");
 
         model = mat4(1.f);
+        auto cameraPos = vec3(2.5f, 1.5f, 2.5f);
         view = lookAt(
-            vec3(0.f, 1.5f, 1.5f),
+            cameraPos,
             vec3(0.f, 0.f, 0.f),
-            vec3(0.f, 0.f, 1.f)
+            vec3(0.f, 1.f, 0.f)
         );
         UpdateAspect(windowSize);
+
+        auto worldSpaceCameraPosLocation =
+            glGetUniformLocation(shaderProgram->Get(), "worldSpaceCameraPos");
+        glUniform3fv(worldSpaceCameraPosLocation, 1, value_ptr(cameraPos));
 
         auto modelInverseTranspose = mat3(transpose(inverse(model)));
         glUniformMatrix3fv(modelInverseTransposeLocation, 1, GL_FALSE, value_ptr(modelInverseTranspose));
@@ -135,6 +140,12 @@ void Graphics::Init(ivec2 windowSize) {
         auto uniReverseLightDirection = glGetUniformLocation(shaderProgram->Get(), "reverseLightDirection");
         auto lightDir = normalize(vec3(0.5, 0.7, 1));
         glUniform3fv(uniReverseLightDirection, 1, value_ptr(lightDir));
+
+
+        colorLocation = glGetUniformLocation(shaderProgram->Get(), "color");
+        shininessLocation = glGetUniformLocation(shaderProgram->Get(), "shininess");
+        diffuseMixLocation = glGetUniformLocation(shaderProgram->Get(), "diffuseMix");
+        specularMixLocation = glGetUniformLocation(shaderProgram->Get(), "specularMix");
 
         timer.Start();
     }
@@ -176,7 +187,7 @@ void Graphics::Draw() {
     glBindVertexArray(vao);
 
     model = mat4(1.0f);
-    model = rotate(model, time * radians(45.f), vec3(0.f, 0.f, 1.f));
+    model = rotate(model, time * radians(45.f), vec3(0.f, 1.f, 0.f));
     auto mvp = proj * view * model;
     glUniformMatrix4fv(modelViewProjectionLocation, 1, GL_FALSE, value_ptr(mvp));
     auto modelInverseTranspose = mat3(transpose(inverse(model)));
@@ -187,6 +198,24 @@ void Graphics::Draw() {
 
     ImGui::Begin("FPS");
     ImGui::Text("%.2f ms\n%.2f FPS", deltaTime * 1000.0f, 1.0f / deltaTime);
+    ImGui::End();
+
+    ImGui::Begin("Shader");
+    float tempColor[3] = { color.r, color.g, color.b };
+    ImGui::ColorPicker3("Colour", (float*) & tempColor, 0);
+    color.x = tempColor[0];
+    color.y = tempColor[1];
+    color.z = tempColor[2];
+    glUniform3fv(colorLocation, 1, value_ptr(color));
+
+    ImGui::DragFloat("Shininess", &shininess, 0.1f, 0.f);
+    glUniform1fv(shininessLocation, 1, &shininess);
+
+    ImGui::SliderFloat("Diffuse", &diffuseMix, 0.f, 1.f);
+    glUniform1fv(diffuseMixLocation, 1, &diffuseMix);
+
+    ImGui::SliderFloat("Specular", &specularMix, 0.f, 1.f);
+    glUniform1fv(specularMixLocation, 1, &specularMix);
     ImGui::End();
 }
 
