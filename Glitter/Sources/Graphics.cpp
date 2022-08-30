@@ -2,6 +2,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <algorithm>
+#include <array>
 #include <iostream>
 #include <glm/glm.hpp>
 #include <sstream>
@@ -11,6 +12,14 @@
 #include "imgui.h"
 
 using namespace glm;
+
+template<std::size_t DESTOFFSET, std::size_t DESTSIZE>
+void staticCopyToVector(const aiVector3t<float>& vert, std::array<float, DESTSIZE> dstVector) {
+    static_assert(DESTOFFSET + 3 <= DESTSIZE);
+    dstVector[DESTOFFSET] = vert.x;
+    dstVector[DESTOFFSET + 1] = vert.y;
+    dstVector[DESTOFFSET + 2] = vert.z;
+}
 
 void Graphics::Init(ivec2 windowSize) {
     try {
@@ -36,22 +45,14 @@ void Graphics::Init(ivec2 windowSize) {
 
         auto* mesh = scene->mMeshes[0];
         const auto componentsPerVertex = 14;
-        std::vector<float> vertices(mesh->mNumVertices * componentsPerVertex);
+        std::vector<std::array<float,componentsPerVertex>> vertices(mesh->mNumVertices);
         for (unsigned int i = 0; i < mesh->mNumVertices; ++i) {
-            vertices[i * componentsPerVertex] = mesh->mVertices[i].x;
-            vertices[i * componentsPerVertex + 1] = mesh->mVertices[i].y;
-            vertices[i * componentsPerVertex + 2] = mesh->mVertices[i].z;
-            vertices[i * componentsPerVertex + 3] = mesh->mNormals[i].x;
-            vertices[i * componentsPerVertex + 4] = mesh->mNormals[i].y;
-            vertices[i * componentsPerVertex + 5] = mesh->mNormals[i].z;
-            vertices[i * componentsPerVertex + 6] = mesh->mTangents[i].x;
-            vertices[i * componentsPerVertex + 7] = mesh->mTangents[i].y;
-            vertices[i * componentsPerVertex + 8] = mesh->mTangents[i].z;
-            vertices[i * componentsPerVertex + 9] = mesh->mBitangents[i].x;
-            vertices[i * componentsPerVertex + 10] = mesh->mBitangents[i].y;
-            vertices[i * componentsPerVertex + 11] = mesh->mBitangents[i].z;
-            vertices[i * componentsPerVertex + 12] = mesh->mTextureCoords[0][i].x;
-            vertices[i * componentsPerVertex + 13] = mesh->mTextureCoords[0][i].y;
+            staticCopyToVector<0>(mesh->mVertices[i], vertices[i]);
+            staticCopyToVector<3>(mesh->mNormals[i], vertices[i]);
+            staticCopyToVector<6>(mesh->mTangents[i], vertices[i]);
+            staticCopyToVector<9>(mesh->mBitangents[i], vertices[i]);
+            vertices[i][componentsPerVertex + 12] = mesh->mTextureCoords[0][i].x;
+            vertices[i][componentsPerVertex + 13] = mesh->mTextureCoords[0][i].y;
         }
 
         std::vector<unsigned int> indices(mesh->mNumFaces * 3);
@@ -69,7 +70,7 @@ void Graphics::Init(ivec2 windowSize) {
 
         glGenBuffers(1, &vbo); // Generate 1 buffer
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vertices.size(), vertices.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vertices.size() * componentsPerVertex, vertices.data(), GL_STATIC_DRAW);
 
         glGenBuffers(1, &ebo);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
