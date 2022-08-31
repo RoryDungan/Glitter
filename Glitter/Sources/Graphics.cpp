@@ -8,13 +8,14 @@
 #include <sstream>
 #include <stdexcept>
 #include "Graphics.hpp"
+#include "Mesh.hpp"
 #include "stb_image.h"
 #include "imgui.h"
 
 using namespace glm;
 
 template<std::size_t DESTOFFSET, std::size_t DESTSIZE>
-void staticCopyToVector(const aiVector3t<float>& vert, std::array<float, DESTSIZE> dstVector) {
+void staticCopyToVector(const aiVector3t<float>& vert, std::array<float, DESTSIZE>& dstVector) {
     static_assert(DESTOFFSET + 3 <= DESTSIZE);
     dstVector[DESTOFFSET] = vert.x;
     dstVector[DESTOFFSET + 1] = vert.y;
@@ -26,55 +27,11 @@ void Graphics::Init(ivec2 windowSize) {
         Assimp::Importer importer;
 
         const auto* filename = "suzanne.obj";
-        const auto* scene = importer.ReadFile(filename,
-            aiProcess_CalcTangentSpace |
-            aiProcess_Triangulate |
-            aiProcess_JoinIdenticalVertices |
-            aiProcess_SortByPType);
 
-        if (scene == nullptr) {
-            std::ostringstream s;
-            s << "Could not load model file \"" << filename << '"';
-            throw std::runtime_error(s.str());
-        }
-        if (scene->mNumMeshes <= 0) {
-            std::ostringstream s;
-            s << "Could not fine any meshes in model file \"" << filename << '"';
-            throw std::runtime_error(s.str());
-        }
-
-        auto* mesh = scene->mMeshes[0];
-        const auto componentsPerVertex = 14;
-        std::vector<std::array<float,componentsPerVertex>> vertices(mesh->mNumVertices);
-        for (unsigned int i = 0; i < mesh->mNumVertices; ++i) {
-            staticCopyToVector<0>(mesh->mVertices[i], vertices[i]);
-            staticCopyToVector<3>(mesh->mNormals[i], vertices[i]);
-            staticCopyToVector<6>(mesh->mTangents[i], vertices[i]);
-            staticCopyToVector<9>(mesh->mBitangents[i], vertices[i]);
-            vertices[i][componentsPerVertex + 12] = mesh->mTextureCoords[0][i].x;
-            vertices[i][componentsPerVertex + 13] = mesh->mTextureCoords[0][i].y;
-        }
-
-        std::vector<unsigned int> indices(mesh->mNumFaces * 3);
-        for (unsigned int i = 0; i < mesh->mNumFaces; ++i) {
-            indices[i * 3] = mesh->mFaces[i].mIndices[0];
-            indices[i * 3 + 1] = mesh->mFaces[i].mIndices[1];
-            indices[i * 3 + 2] = mesh->mFaces[i].mIndices[2];
-        }
-        numElements = mesh->mNumFaces * 3;
+        Mesh mesh(filename);
+        numElements = mesh.GetNumElements();
 
         glEnable(GL_DEPTH_TEST);
-
-        glGenVertexArrays(1, &vao);
-        glBindVertexArray(vao);
-
-        glGenBuffers(1, &vbo); // Generate 1 buffer
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vertices.size() * componentsPerVertex, vertices.data(), GL_STATIC_DRAW);
-
-        glGenBuffers(1, &ebo);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(float) * indices.size(), indices.data(), GL_STATIC_DRAW);
 
         shaderProgram = std::make_unique<Shader>();
         shaderProgram->AttachShader("drawing.vert");
@@ -84,6 +41,17 @@ void Graphics::Init(ivec2 windowSize) {
 
         shaderProgram->Link();
         shaderProgram->Activate();
+
+        glGenVertexArrays(1, &vao);
+        glBindVertexArray(vao);
+
+        glGenBuffers(1, &vbo); // Generate 1 buffer
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, mesh.GetVertexDataSize(), mesh.GetVertexData(), GL_STATIC_DRAW);
+
+        glGenBuffers(1, &ebo);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.GetIndiciesSize(), mesh.GetIndices(), GL_STATIC_DRAW);
 
         shaderProgram->SetupVertexAttribs({
             {"position", 3, GL_FLOAT},
