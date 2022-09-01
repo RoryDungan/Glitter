@@ -1,15 +1,8 @@
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-#include <algorithm>
-#include <array>
 #include <iostream>
 #include <glm/glm.hpp>
-#include <sstream>
 #include <stdexcept>
 #include "Graphics.hpp"
 #include "Mesh.hpp"
-#include "stb_image.h"
 #include "imgui.h"
 
 #include "Drawable.hpp"
