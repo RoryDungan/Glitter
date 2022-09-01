@@ -32,8 +32,8 @@ public:
     void Activate() {
         glUseProgram(program);
     }
-    void SetupVertexAttribs(std::vector<VertexAttribInfo> vertexAttribs);
-    void BindTextures(std::vector<TexSettings> textures);
+    void SetupVertexAttribs(const std::vector<VertexAttribInfo>& vertexAttribs);
+    void BindTextures(const std::vector<TexSettings>& textures);
     
     GLuint Get() {
         return program;

@@ -12,6 +12,8 @@
 #include "stb_image.h"
 #include "imgui.h"
 
+#include "Drawable.hpp"
+
 using namespace glm;
 
 template<std::size_t DESTOFFSET, std::size_t DESTSIZE>
@@ -24,72 +26,16 @@ void staticCopyToVector(const aiVector3t<float>& vert, std::array<float, DESTSIZ
 
 void Graphics::Init(ivec2 windowSize) {
     try {
-        Assimp::Importer importer;
-
-        const auto* filename = "suzanne.obj";
-
-        Mesh mesh(filename);
-        numElements = mesh.GetNumElements();
-
         glEnable(GL_DEPTH_TEST);
 
-        shaderProgram = std::make_unique<Shader>();
+        Mesh mesh("suzanne.obj");
+
+        auto shaderProgram = std::make_shared<Shader>();
         shaderProgram->AttachShader("drawing.vert");
         shaderProgram->AttachShader("drawing.frag");
 
-        glBindFragDataLocation(shaderProgram->Get(), 0, "outColor");
+        monkey = std::make_unique<Drawable>(mesh, shaderProgram, timer);
 
-        shaderProgram->Link();
-        shaderProgram->Activate();
-
-        glGenVertexArrays(1, &vao);
-        glBindVertexArray(vao);
-
-        glGenBuffers(1, &vbo); // Generate 1 buffer
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, mesh.GetVertexDataSize(), mesh.GetVertexData(), GL_STATIC_DRAW);
-
-        glGenBuffers(1, &ebo);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.GetIndiciesSize(), mesh.GetIndices(), GL_STATIC_DRAW);
-
-        shaderProgram->SetupVertexAttribs({
-            {"position", 3, GL_FLOAT},
-            {"normal", 3, GL_FLOAT},
-            {"tangent", 3, GL_FLOAT},
-            {"bitangent", 3, GL_FLOAT},
-            {"texcoord", 2, GL_FLOAT},
-        });
-        
-        shaderProgram->BindTextures({
-            {
-                "metal.jpg",
-                "tex",
-                {
-                    {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
-                    {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE},
-                    {GL_TEXTURE_MIN_FILTER, GL_LINEAR},
-                    {GL_TEXTURE_MAG_FILTER, GL_LINEAR}
-                }
-            },
-            {
-                "metal_norm.jpg",
-                "normalMap",
-                {
-                    {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
-                    {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE},
-                    {GL_TEXTURE_MIN_FILTER, GL_LINEAR},
-                    {GL_TEXTURE_MAG_FILTER, GL_LINEAR}
-                }
-            },
-        });
-
-        modelViewProjectionLocation =
-            glGetUniformLocation(shaderProgram->Get(), "modelViewProjection");
-        modelInverseTransposeLocation = 
-            glGetUniformLocation(shaderProgram->Get(), "modelInverseTranspose");
-
-        model = mat4(1.f);
         auto cameraPos = vec3(2.5f, 1.5f, 2.5f);
         view = lookAt(
             cameraPos,
@@ -98,25 +44,7 @@ void Graphics::Init(ivec2 windowSize) {
         );
         UpdateAspect(windowSize);
 
-        auto worldSpaceCameraPosLocation =
-            glGetUniformLocation(shaderProgram->Get(), "worldSpaceCameraPos");
-        glUniform3fv(worldSpaceCameraPosLocation, 1, value_ptr(cameraPos));
-
-        auto modelInverseTranspose = mat3(transpose(inverse(model)));
-        glUniformMatrix3fv(modelInverseTransposeLocation, 1, GL_FALSE, value_ptr(modelInverseTranspose));
-
-        // set the light direction.
-        auto uniReverseLightDirection = glGetUniformLocation(shaderProgram->Get(), "reverseLightDirection");
-        auto lightDir = normalize(vec3(0.5, 0.7, 1));
-        glUniform3fv(uniReverseLightDirection, 1, value_ptr(lightDir));
-
-
-        colorLocation = glGetUniformLocation(shaderProgram->Get(), "color");
-        shininessLocation = glGetUniformLocation(shaderProgram->Get(), "shininess");
-        diffuseMixLocation = glGetUniformLocation(shaderProgram->Get(), "diffuseMix");
-        specularMixLocation = glGetUniformLocation(shaderProgram->Get(), "specularMix");
-
-        timer.Start();
+        timer->Start();
     }
     catch (std::runtime_error ex) {
         error = ex.what();
@@ -131,14 +59,11 @@ void Graphics::UpdateAspect(ivec2 windowSize) {
         1.f, 
         10.f
     );
-    auto mvp = proj * view * model;
-    glUniformMatrix4fv(modelViewProjectionLocation, 1, GL_FALSE, value_ptr(mvp));
 }
 
 void Graphics::Draw() {
-    timer.Update();
-    auto time = timer.GetTime();
-    auto deltaTime = timer.GetDelta();
+    timer->Update();
+    auto deltaTime = timer->GetDelta();
 
     // Background Fill Color
     glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
@@ -151,44 +76,12 @@ void Graphics::Draw() {
         return;
     }
 
-
-    shaderProgram->Activate();
-    glBindVertexArray(vao);
-
-    model = mat4(1.0f);
-    model = rotate(model, time * radians(45.f), vec3(0.f, 1.f, 0.f));
-    auto mvp = proj * view * model;
-    glUniformMatrix4fv(modelViewProjectionLocation, 1, GL_FALSE, value_ptr(mvp));
-    auto modelInverseTranspose = mat3(transpose(inverse(model)));
-    glUniformMatrix3fv(modelInverseTransposeLocation, 1, GL_FALSE, value_ptr(modelInverseTranspose));
-    
-    glDrawElements(GL_TRIANGLES, numElements, GL_UNSIGNED_INT, 0);
-    glBindVertexArray(0);
+    monkey->Draw(view, proj);
 
     ImGui::Begin("FPS");
     ImGui::Text("%.2f ms\n%.2f FPS", deltaTime * 1000.0f, 1.0f / deltaTime);
     ImGui::End();
-
-    ImGui::Begin("Shader");
-    float tempColor[3] = { color.r, color.g, color.b };
-    ImGui::ColorPicker3("Colour", (float*) & tempColor, 0);
-    color.x = tempColor[0];
-    color.y = tempColor[1];
-    color.z = tempColor[2];
-    glUniform3fv(colorLocation, 1, value_ptr(color));
-
-    ImGui::DragFloat("Shininess", &shininess, 0.1f, 0.f);
-    glUniform1fv(shininessLocation, 1, &shininess);
-
-    ImGui::SliderFloat("Diffuse", &diffuseMix, 0.f, 1.f);
-    glUniform1fv(diffuseMixLocation, 1, &diffuseMix);
-
-    ImGui::SliderFloat("Specular", &specularMix, 0.f, 1.f);
-    glUniform1fv(specularMixLocation, 1, &specularMix);
-    ImGui::End();
 }
 
 Graphics::~Graphics() {
-    glDeleteBuffers(1, &vbo);
-    glDeleteVertexArrays(1, &vao);
 }

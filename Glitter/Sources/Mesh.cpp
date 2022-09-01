@@ -7,6 +7,14 @@
 #include <sstream>
 #include <stdexcept>
 
+const std::vector<VertexAttribInfo> Mesh::VertexAttribs = {
+    {"position", 3, GL_FLOAT},
+    {"normal", 3, GL_FLOAT},
+    {"tangent", 3, GL_FLOAT},
+    {"bitangent", 3, GL_FLOAT},
+    {"texcoord", 2, GL_FLOAT},
+};
+
 template<std::size_t DESTOFFSET, std::size_t DESTSIZE>
 static void staticCopyToVector(const aiVector3t<float>& vert, std::array<float, DESTSIZE>& dstVector) {
     static_assert(DESTOFFSET + 3 <= DESTSIZE);

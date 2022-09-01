@@ -44,7 +44,7 @@ void Shader::Link() {
     }
 }
 
-void Shader::SetupVertexAttribs(std::vector<VertexAttribInfo> vertexAttribs) {
+void Shader::SetupVertexAttribs(const std::vector<VertexAttribInfo>& vertexAttribs) {
     std::vector<VertexAttribPointerSettings> vertexAttribPointers(vertexAttribs.size());
 
     int sizeSoFar = 0;
@@ -79,7 +79,7 @@ void Shader::SetupVertexAttribs(std::vector<VertexAttribInfo> vertexAttribs) {
     }
 }
 
-void Shader::BindTextures(std::vector<TexSettings> textureSettings) {
+void Shader::BindTextures(const std::vector<TexSettings>& textureSettings) {
     std::vector<GLuint> textures(textureSettings.size());
     glGenTextures(textureSettings.size(), textures.data());
     

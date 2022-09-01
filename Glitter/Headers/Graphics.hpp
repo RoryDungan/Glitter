@@ -5,12 +5,15 @@
 #include <string>
 
 #include "glitter.hpp"
+#include "Drawable.hpp"
 #include "Shader.hpp"
 #include "Timer.hpp"
 
 class Graphics {
 public:
-    Graphics() { }
+    Graphics() { 
+        timer = std::make_shared<Timer>();
+    }
 
     void Init(glm::ivec2 windowSize);
     void Draw();
@@ -19,18 +22,10 @@ public:
 
     ~Graphics();
 private:
-    Timer timer;
-    std::unique_ptr<Shader> shaderProgram;
-    
-    // uniform locations
-    GLint modelViewProjectionLocation, modelInverseTransposeLocation,
-        colorLocation, shininessLocation, diffuseMixLocation, specularMixLocation;
+    std::shared_ptr<Timer> timer;
+    std::unique_ptr<Drawable> monkey;
 
-    GLuint vbo = 0, vao = 0, ebo = 0;
-    
-    unsigned int numElements;
-
-    glm::mat4 model, view, proj;
+    glm::mat4 view, proj;
 
     glm::vec3 color = glm::vec3(0.5f, 1.f, 0.5f);
     float shininess = 10.f, diffuseMix = 1.f, specularMix = 1.f;

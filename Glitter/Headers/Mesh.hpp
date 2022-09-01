@@ -1,30 +1,35 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <filesystem>
+#include <vector>
+
+#include "Shader.hpp"
 
 class Mesh {
 public:
     Mesh(const std::filesystem::path& filename);
 
-    unsigned int GetNumElements() {
+    const unsigned int GetNumElements() const {
         return numElements;
     }
 
-    void* GetVertexData() {
+    const void* const GetVertexData() const {
         return vertices.data();
     }
-    size_t GetVertexDataSize() {
+    const size_t GetVertexDataSize() const {
         return sizeof(float) * vertices.size() * componentsPerVertex;
     }
 
-    void* GetIndices() {
+    const void* GetIndices() const {
         return indices.data();
     }
-    size_t GetIndiciesSize() {
+    const size_t GetIndiciesSize() const {
         return sizeof(unsigned int) * indices.size();
     }
 
+    static const std::vector<VertexAttribInfo> VertexAttribs;
 private:
     static const size_t componentsPerVertex = 14;
     unsigned int numElements;
