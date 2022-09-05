@@ -7,6 +7,7 @@
 #include "Drawable.hpp"
 #include "Graphics.hpp"
 #include "FileMesh.hpp"
+#include "PlanePrimitiveMesh.hpp"
 #include "Shader.hpp"
 #include "Timer.hpp"
 
@@ -20,18 +21,25 @@ void Graphics::Init(ivec2 windowSize) {
     try {
         glEnable(GL_DEPTH_TEST);
 
-        FileMesh mesh("suzanne.obj");
+        PlanePrimitiveMesh floorMesh(6.f);
 
-        auto shaderProgram = std::make_shared<Shader>();
-        shaderProgram->AttachShader("drawing.vert");
-        shaderProgram->AttachShader("drawing.frag");
+        FileMesh monkeyMesh("suzanne.obj");
 
-        monkey = std::make_unique<Drawable>(mesh, shaderProgram, timer);
+        auto monkeyShader = std::make_shared<Shader>();
+        monkeyShader->AttachShader("drawing.vert");
+        monkeyShader->AttachShader("drawing.frag");
 
-        auto cameraPos = vec3(2.5f, 1.5f, 2.5f);
+        //auto floorShader = std::make_shared<Shader>();
+        //monkeyShader->AttachShader("drawing.vert");
+        //monkeyShader->AttachShader("drawing.frag");
+
+        floor = std::make_unique<Drawable>(floorMesh, monkeyShader);
+        monkey = std::make_unique<Drawable>(monkeyMesh, monkeyShader);
+
+        auto cameraPos = vec3(2.5f, 2.5f, 2.5f);
         view = lookAt(
             cameraPos,
-            vec3(0.f, 0.f, 0.f),
+            vec3(0.f, 0.6f, 0.f),
             vec3(0.f, 1.f, 0.f)
         );
         UpdateAspect(windowSize);
@@ -56,6 +64,7 @@ void Graphics::UpdateAspect(ivec2 windowSize) {
 void Graphics::Draw() {
     timer->Update();
     auto deltaTime = timer->GetDelta();
+    auto time = timer->GetTime();
 
     // Background Fill Color
     glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
@@ -68,7 +77,15 @@ void Graphics::Draw() {
         return;
     }
 
-    monkey->Draw(view, proj);
+    auto monkeyPos = vec3(0, 0.9f, 0);
+    auto monkeyModelMat = translate(rotate(
+        mat4(1.f), 
+        time * radians(45.f), 
+        vec3(0.f, 1.f, 0.f)
+    ), monkeyPos);
+
+    monkey->Draw(monkeyModelMat, view, proj);
+    floor->Draw(mat4(1), view, proj);
 
     ImGui::Begin("FPS");
     ImGui::Text("%.2f ms\n%.2f FPS", deltaTime * 1000.0f, 1.0f / deltaTime);

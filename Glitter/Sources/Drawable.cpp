@@ -10,8 +10,8 @@
 
 using namespace glm;
 
-Drawable::Drawable(const Mesh& mesh, const std::shared_ptr<Shader> shader, const std::shared_ptr<Timer> timer) 
-    : shaderProgram(shader), timer(timer) {
+Drawable::Drawable(const Mesh& mesh, const std::shared_ptr<Shader> shader) 
+    : shaderProgram(shader) {
     glBindFragDataLocation(shaderProgram->Get(), 0, "outColor");
 
     numElements = mesh.GetNumElements();
@@ -69,8 +69,6 @@ Drawable::Drawable(const Mesh& mesh, const std::shared_ptr<Shader> shader, const
     diffuseMixLocation = glGetUniformLocation(shaderProgram->Get(), "diffuseMix");
     specularMixLocation = glGetUniformLocation(shaderProgram->Get(), "specularMix");
 
-    model = mat4(1.f);
-
     auto lightDir = normalize(vec3(0.5, 0.7, 1));
     glUniform3fv(reverseLightDirectionLocation, 1, value_ptr(lightDir));
 }
@@ -86,17 +84,11 @@ Drawable::~Drawable() {
     }
 }
 
-void Drawable::Draw(mat4 view, mat4 projection) {
-    auto time = timer->GetTime();
+void Drawable::Draw(mat4 model, mat4 view, mat4 projection) {
 
     shaderProgram->Activate();
     glBindVertexArray(vao);
 
-    model = rotate(
-        mat4(1.f), 
-        time * radians(45.f), 
-        vec3(0.f, 1.f, 0.f)
-    );
     auto mvp = projection * view * model;
     glUniformMatrix4fv(modelViewProjectionLocation, 1, GL_FALSE, value_ptr(mvp));
 
@@ -106,21 +98,21 @@ void Drawable::Draw(mat4 view, mat4 projection) {
     glDrawElements(GL_TRIANGLES, numElements, GL_UNSIGNED_INT, 0);
 
 
-    ImGui::Begin("Shader");
-    float tempColor[3] = { color.r, color.g, color.b };
-    ImGui::ColorPicker3("Colour", (float*) & tempColor, 0);
-    color.x = tempColor[0];
-    color.y = tempColor[1];
-    color.z = tempColor[2];
-    glUniform3fv(colorLocation, 1, value_ptr(color));
+    //ImGui::Begin("Shader");
+    //float tempColor[3] = { color.r, color.g, color.b };
+    //ImGui::ColorPicker3("Colour", (float*) & tempColor, 0);
+    //color.x = tempColor[0];
+    //color.y = tempColor[1];
+    //color.z = tempColor[2];
+    //glUniform3fv(colorLocation, 1, value_ptr(color));
 
-    ImGui::DragFloat("Shininess", &shininess, 0.1f, 0.f);
-    glUniform1fv(shininessLocation, 1, &shininess);
+    //ImGui::DragFloat("Shininess", &shininess, 0.1f, 0.f);
+    //glUniform1fv(shininessLocation, 1, &shininess);
 
-    ImGui::SliderFloat("Diffuse", &diffuseMix, 0.f, 1.f);
-    glUniform1fv(diffuseMixLocation, 1, &diffuseMix);
+    //ImGui::SliderFloat("Diffuse", &diffuseMix, 0.f, 1.f);
+    //glUniform1fv(diffuseMixLocation, 1, &diffuseMix);
 
-    ImGui::SliderFloat("Specular", &specularMix, 0.f, 1.f);
-    glUniform1fv(specularMixLocation, 1, &specularMix);
-    ImGui::End();
+    //ImGui::SliderFloat("Specular", &specularMix, 0.f, 1.f);
+    //glUniform1fv(specularMixLocation, 1, &specularMix);
+    //ImGui::End();
 }

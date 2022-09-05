@@ -20,6 +20,7 @@ public:
 private:
     std::shared_ptr<Timer> timer;
     std::unique_ptr<Drawable> monkey;
+    std::unique_ptr<Drawable> floor;
 
     glm::mat4 view, proj;
 
