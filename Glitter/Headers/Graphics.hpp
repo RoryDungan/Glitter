@@ -22,6 +22,8 @@ private:
     std::unique_ptr<Drawable> monkey;
     std::unique_ptr<Drawable> floor;
 
+    std::shared_ptr<Shader> monkeyShader;
+
     glm::mat4 view, proj;
 
     glm::vec3 color = glm::vec3(0.5f, 1.f, 0.5f);

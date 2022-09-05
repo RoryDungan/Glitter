@@ -12,6 +12,8 @@ struct VertexAttribPointerSettings {
     int pointer;
 };
 
+GLuint Shader::activeProgram = 0;
+
 void Shader::AttachShader(const std::filesystem::path& path) {
     auto extension = path.extension();
     GLuint shader;
@@ -44,6 +46,14 @@ void Shader::Link() {
         msg << "Error linking program: " << buffer.data();
         throw std::runtime_error(msg.str());
     }
+}
+
+void Shader::Activate() {
+    if (activeProgram == program) {
+        return;
+    }
+    glUseProgram(program);
+    activeProgram = program;
 }
 
 void Shader::SetupVertexAttribs(const VertexAttribInfoList& vertexAttribs) {
@@ -81,7 +91,17 @@ void Shader::SetupVertexAttribs(const VertexAttribInfoList& vertexAttribs) {
     }
 }
 
+void Shader::ConnectUniforms(const std::vector<std::string>& uniformNames) {
+    Activate();
+
+    for (auto& name : uniformNames) {
+         uniforms[name] = glGetUniformLocation(program, name.c_str());
+    }
+}
+
 void Shader::BindTextures(const std::vector<TexSettings>& textureSettings) {
+    Activate();
+
     std::vector<GLuint> textures(textureSettings.size());
     glGenTextures(textureSettings.size(), textures.data());
     

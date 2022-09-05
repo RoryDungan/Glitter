@@ -25,16 +25,22 @@ void Graphics::Init(ivec2 windowSize) {
 
         FileMesh monkeyMesh("suzanne.obj");
 
-        auto monkeyShader = std::make_shared<Shader>();
+        monkeyShader = std::make_shared<Shader>();
         monkeyShader->AttachShader("drawing.vert");
         monkeyShader->AttachShader("drawing.frag");
+        monkeyShader->Link();
+        monkeyShader->ConnectUniforms(
+            { "color", "shininess", "diffuseMix", "specularMix" }
+        );
 
-        //auto floorShader = std::make_shared<Shader>();
-        //monkeyShader->AttachShader("drawing.vert");
-        //monkeyShader->AttachShader("drawing.frag");
-
-        floor = std::make_unique<Drawable>(floorMesh, monkeyShader);
         monkey = std::make_unique<Drawable>(monkeyMesh, monkeyShader);
+
+        auto floorShader = std::make_shared<Shader>();
+        floorShader->AttachShader("drawing.vert");
+        floorShader->AttachShader("drawing.frag");
+        floorShader->Link();
+
+        floor = std::make_unique<Drawable>(floorMesh, floorShader);
 
         auto cameraPos = vec3(2.5f, 2.5f, 2.5f);
         view = lookAt(
@@ -86,6 +92,24 @@ void Graphics::Draw() {
 
     monkey->Draw(monkeyModelMat, view, proj);
     floor->Draw(mat4(1), view, proj);
+
+    ImGui::Begin("Shader");
+    float tempColor[3] = { color.r, color.g, color.b };
+    ImGui::ColorPicker3("Colour", (float*) & tempColor, 0);
+    color.x = tempColor[0];
+    color.y = tempColor[1];
+    color.z = tempColor[2];
+    monkeyShader->SetUniform("color", color);
+
+    ImGui::DragFloat("Shininess", &shininess, 0.1f, 0.f);
+    monkeyShader->SetUniform("shininess", shininess);
+
+    ImGui::SliderFloat("Diffuse", &diffuseMix, 0.f, 1.f);
+    monkeyShader->SetUniform("diffuseMix", diffuseMix);
+
+    ImGui::SliderFloat("Specular", &specularMix, 0.f, 1.f);
+    monkeyShader->SetUniform("specularMix", specularMix);
+    ImGui::End();
 
     ImGui::Begin("FPS");
     ImGui::Text("%.2f ms\n%.2f FPS", deltaTime * 1000.0f, 1.0f / deltaTime);
