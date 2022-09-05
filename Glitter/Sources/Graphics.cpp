@@ -20,6 +20,7 @@ Graphics::Graphics() {
 void Graphics::Init(ivec2 windowSize) {
     try {
         glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
 
         PlanePrimitiveMesh floorMesh(6.f);
 

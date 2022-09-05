@@ -16,7 +16,7 @@ public:
             {  size / 2.f, 0.f,  size / 2.f, 0.f, 1.f, 0.f, 0.f, 0.f, -1.f, 1.f, 0.f, 0.f, 1.f, 1.f },
         };
 
-        indices = { 0, 1, 2, 2, 1, 3 };
+        indices = { 0, 2, 1, 2, 3, 1 };
     }
 
     const unsigned int GetNumElements() const {
