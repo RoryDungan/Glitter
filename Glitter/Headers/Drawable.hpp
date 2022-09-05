@@ -27,7 +27,6 @@ private:
     GLuint vbo = 0, vao = 0, ebo = 0;
 
     glm::vec3 color = glm::vec3(0.5f, 1.f, 0.5f);
-    float shininess = 10.f, diffuseMix = 1.f, specularMix = 1.f;
 
     unsigned int numElements;
 };
