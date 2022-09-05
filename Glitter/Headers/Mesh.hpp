@@ -1,38 +1,25 @@
 #pragma once
 
-#include <algorithm>
-#include <array>
-#include <filesystem>
+#include <string>
 #include <vector>
 
-#include "Shader.hpp"
+struct VertexAttribInfo {
+    std::string name;
+    GLint size;
+    GLenum type;
+};
+
+typedef std::vector<VertexAttribInfo> VertexAttribInfoList;
 
 class Mesh {
 public:
-    Mesh(const std::filesystem::path& filename);
+    virtual const unsigned int GetNumElements() const = 0;
 
-    const unsigned int GetNumElements() const {
-        return numElements;
-    }
+    virtual const void* const GetVertexData() const = 0;
+    virtual const size_t GetVertexDataSize() const = 0;
 
-    const void* const GetVertexData() const {
-        return vertices.data();
-    }
-    const size_t GetVertexDataSize() const {
-        return sizeof(float) * vertices.size() * componentsPerVertex;
-    }
+    virtual const void* const GetIndices() const = 0;
+    virtual const size_t GetIndiciesSize() const = 0;
 
-    const void* GetIndices() const {
-        return indices.data();
-    }
-    const size_t GetIndiciesSize() const {
-        return sizeof(unsigned int) * indices.size();
-    }
-
-    static const std::vector<VertexAttribInfo> VertexAttribs;
-private:
-    static const size_t componentsPerVertex = 14;
-    unsigned int numElements;
-    std::vector<std::array<float, componentsPerVertex>> vertices;
-    std::vector<unsigned int> indices;
+    virtual const VertexAttribInfoList& GetVertexAttribs() const = 0;
 };

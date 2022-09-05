@@ -2,6 +2,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "imgui.h"
 #include "Drawable.hpp"
+#include "Shader.hpp"
 
 using namespace glm;
 
@@ -25,7 +26,7 @@ Drawable::Drawable(const Mesh& mesh, const std::shared_ptr<Shader> shader, const
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.GetIndiciesSize(), mesh.GetIndices(), GL_STATIC_DRAW);
 
-    shaderProgram->SetupVertexAttribs(mesh.VertexAttribs);
+    shaderProgram->SetupVertexAttribs(mesh.GetVertexAttribs());
 
     shaderProgram->BindTextures({
         {

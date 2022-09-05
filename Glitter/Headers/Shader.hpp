@@ -5,11 +5,7 @@
 #include <string>
 #include <vector>
 
-struct VertexAttribInfo {
-    std::string name;
-    GLint size;
-    GLenum type;
-};
+#include "Mesh.hpp"
 
 struct TexSettings {
     std::filesystem::path path;
@@ -32,7 +28,7 @@ public:
     void Activate() {
         glUseProgram(program);
     }
-    void SetupVertexAttribs(const std::vector<VertexAttribInfo>& vertexAttribs);
+    void SetupVertexAttribs(const VertexAttribInfoList& vertexAttribs);
     void BindTextures(const std::vector<TexSettings>& textures);
     
     GLuint Get() {

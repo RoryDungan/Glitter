@@ -1,5 +1,7 @@
 #pragma once
+#include <glad/glad.h>
 #include <glm/glm.hpp>
+#include <memory>
 
 #include "Mesh.hpp"
 #include "Timer.hpp"

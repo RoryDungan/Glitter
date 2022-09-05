@@ -1,13 +1,15 @@
-#include "Mesh.hpp"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <array>
 #include <glm/glm.hpp>
+#include <glad/glad.h>
 #include <sstream>
 #include <stdexcept>
 
-const std::vector<VertexAttribInfo> Mesh::VertexAttribs = {
+#include "FileMesh.hpp"
+
+const VertexAttribInfoList FileMesh::VertexAttribs = {
     {"position", 3, GL_FLOAT},
     {"normal", 3, GL_FLOAT},
     {"tangent", 3, GL_FLOAT},
@@ -23,7 +25,7 @@ static void staticCopyToVector(const aiVector3t<float>& vert, std::array<float, 
     dstVector[DESTOFFSET + 2] = vert.z;
 }
 
-Mesh::Mesh(const std::filesystem::path& filename) {
+FileMesh::FileMesh(const std::filesystem::path& filename) {
     Assimp::Importer importer;
 
     const auto* scene = importer.ReadFile(filename.string(),

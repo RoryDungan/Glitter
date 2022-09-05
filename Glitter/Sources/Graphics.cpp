@@ -2,26 +2,18 @@
 #include <glm/glm.hpp>
 #include <stdexcept>
 #include "Graphics.hpp"
-#include "Mesh.hpp"
+#include "FileMesh.hpp"
 #include "imgui.h"
 
 #include "Drawable.hpp"
 
 using namespace glm;
 
-template<std::size_t DESTOFFSET, std::size_t DESTSIZE>
-void staticCopyToVector(const aiVector3t<float>& vert, std::array<float, DESTSIZE>& dstVector) {
-    static_assert(DESTOFFSET + 3 <= DESTSIZE);
-    dstVector[DESTOFFSET] = vert.x;
-    dstVector[DESTOFFSET + 1] = vert.y;
-    dstVector[DESTOFFSET + 2] = vert.z;
-}
-
 void Graphics::Init(ivec2 windowSize) {
     try {
         glEnable(GL_DEPTH_TEST);
 
-        Mesh mesh("suzanne.obj");
+        FileMesh mesh("suzanne.obj");
 
         auto shaderProgram = std::make_shared<Shader>();
         shaderProgram->AttachShader("drawing.vert");
