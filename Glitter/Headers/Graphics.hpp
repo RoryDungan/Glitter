@@ -1,20 +1,16 @@
 #pragma once
 
-#include <memory>
 #include <glm/glm.hpp>
+#include <memory>
 #include <string>
 
-#include "glitter.hpp"
-#include "Drawable.hpp"
-#include "Shader.hpp"
-#include "Timer.hpp"
+class Drawable;
+class Shader;
+class Timer;
 
 class Graphics {
 public:
-    Graphics() { 
-        timer = std::make_shared<Timer>();
-    }
-
+    Graphics(); 
     void Init(glm::ivec2 windowSize);
     void Draw();
 

@@ -1,10 +1,5 @@
-// Local Headers
-#include "glitter.hpp"
-
 // System Headers
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
+#include <glm/glm.hpp>
 #include <memory>
 
 #include "Graphics.hpp"
@@ -13,8 +8,11 @@
 int main(int argc, char * argv[]) {
     auto graphics = std::make_shared<Graphics>();
 
-    Window window(graphics, mWidth, mHeight, "OpenGL");
-    graphics->Init(glm::ivec2(mWidth, mHeight));
+    const auto width = 1280;
+    const auto height = 800;
+
+    Window window(graphics, width, height, "OpenGL");
+    graphics->Init(glm::ivec2(width, height));
     window.LoopUntilDone();
 
     return EXIT_SUCCESS;

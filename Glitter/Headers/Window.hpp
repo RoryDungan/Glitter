@@ -1,6 +1,4 @@
 #pragma once
-#include "glitter.hpp"
-
 #include <GLFW/glfw3.h>
 #include <memory>
 

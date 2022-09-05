@@ -3,10 +3,9 @@
 #include <glm/glm.hpp>
 #include <memory>
 
-#include "Mesh.hpp"
-#include "Timer.hpp"
-
 class Shader;
+class Mesh;
+class Timer;
 
 class Drawable {
 public:

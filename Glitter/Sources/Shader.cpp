@@ -1,7 +1,9 @@
-#include "Shader.hpp"
 #include <fstream>
 #include <sstream>
-#include "stb_image.h"
+#include <stb_image.h>
+
+#include "Mesh.hpp"
+#include "Shader.hpp"
 
 struct VertexAttribPointerSettings {
     GLint attrib;
@@ -44,7 +46,7 @@ void Shader::Link() {
     }
 }
 
-void Shader::SetupVertexAttribs(const std::vector<VertexAttribInfo>& vertexAttribs) {
+void Shader::SetupVertexAttribs(const VertexAttribInfoList& vertexAttribs) {
     std::vector<VertexAttribPointerSettings> vertexAttribPointers(vertexAttribs.size());
 
     int sizeSoFar = 0;

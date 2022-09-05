@@ -1,8 +1,12 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include "imgui.h"
+#include <imgui.h>
+
 #include "Drawable.hpp"
+#include "Mesh.hpp"
 #include "Shader.hpp"
+#include "Timer.hpp"
+
 
 using namespace glm;
 

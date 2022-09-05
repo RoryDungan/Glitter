@@ -1,13 +1,20 @@
-#include <iostream>
 #include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <imgui.h>
+#include <iostream>
 #include <stdexcept>
-#include "Graphics.hpp"
-#include "FileMesh.hpp"
-#include "imgui.h"
 
 #include "Drawable.hpp"
+#include "Graphics.hpp"
+#include "FileMesh.hpp"
+#include "Shader.hpp"
+#include "Timer.hpp"
 
 using namespace glm;
+
+Graphics::Graphics() {
+    timer = std::make_shared<Timer>();
+}
 
 void Graphics::Init(ivec2 windowSize) {
     try {
