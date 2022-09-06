@@ -23,14 +23,11 @@ void main()
 	vec3 _SpecularColor = vec3(1,1,1);
 
 	vec3 viewDirection = normalize(worldSpaceCameraPos - gl_FragCoord.xyz);
-	// because v_normal is a varying it's interpolated
-	// so it will not be a uint vector. Normalizing it
-	// will make it a unit vector again
-	//vec3 normal = normalize(Normal);
 
 //    vec3 normal = texture(normalMap, Texcoord).rgb;
 //    normal = normal * 2.0 - 1; // Convert from 0..1 to -1..1
 //    normal = normalize(TBN * normal); // transform from tangent to world space
+
 	vec3 normal = normalize(TBN * vec3(0,0,1));
 
 	// compute the light by taking the dot product
@@ -40,7 +37,8 @@ void main()
 
 	vec3 light = diffuse * diffuseMix + specular * specularMix;
 
+	vec3 texSample = texture(tex, Texcoord).rgb;
 	// Lets multiply just the color portion (not the alpha)
 	// by the light
-	outColor = vec4(color * light, 1);//texture(tex, Texcoord);
+	outColor = vec4(texSample * light, 1);//texture(tex, Texcoord);
 }

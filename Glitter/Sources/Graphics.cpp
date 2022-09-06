@@ -4,6 +4,7 @@
 #include <iostream>
 #include <stdexcept>
 
+#include "CubePrimitiveMesh.hpp"
 #include "Drawable.hpp"
 #include "Graphics.hpp"
 #include "FileMesh.hpp"
@@ -22,24 +23,60 @@ void Graphics::Init(ivec2 windowSize) {
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
 
-        PlanePrimitiveMesh floorMesh(6.f);
+        PlanePrimitiveMesh floorMesh(3.f);
 
-        FileMesh monkeyMesh("suzanne.obj");
+        CubePrimitiveMesh monkeyMesh(1.f);
+        //FileMesh monkeyMesh("suzanne.obj");
 
         monkeyShader = std::make_shared<Shader>();
         monkeyShader->AttachShader("drawing.vert");
-        monkeyShader->AttachShader("drawing.frag");
+        //monkeyShader->AttachShader("solid-colour.frag");
+        monkeyShader->AttachShader("textured.frag");
         monkeyShader->Link();
         monkeyShader->ConnectUniforms(
             { "color", "shininess", "diffuseMix", "specularMix" }
         );
+        monkeyShader->BindTextures({
+            {
+                "vinny.jpg",
+                "tex",
+                {
+                    {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
+                    {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE},
+                    {GL_TEXTURE_MIN_FILTER, GL_LINEAR},
+                    {GL_TEXTURE_MAG_FILTER, GL_LINEAR}
+                }
+            }
+        });
 
         monkey = std::make_unique<Drawable>(monkeyMesh, monkeyShader);
 
         auto floorShader = std::make_shared<Shader>();
         floorShader->AttachShader("drawing.vert");
-        floorShader->AttachShader("drawing.frag");
+        floorShader->AttachShader("textured.frag");
         floorShader->Link();
+        //floorShader->BindTextures({
+        //    {
+        //        "metal.jpg",
+        //        "tex",
+        //        {
+        //            {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
+        //            {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE},
+        //            {GL_TEXTURE_MIN_FILTER, GL_LINEAR},
+        //            {GL_TEXTURE_MAG_FILTER, GL_LINEAR}
+        //        }
+        //    },
+        //    {
+        //        "metal_norm.jpg",
+        //        "normalMap",
+        //        {
+        //            {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
+        //            {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE},
+        //            {GL_TEXTURE_MIN_FILTER, GL_LINEAR},
+        //            {GL_TEXTURE_MAG_FILTER, GL_LINEAR}
+        //        }
+        //    },
+        //});
 
         floor = std::make_unique<Drawable>(floorMesh, floorShader);
 
