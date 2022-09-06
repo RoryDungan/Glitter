@@ -1,52 +1,15 @@
 #pragma once
 
-#include <array>
-#include <filesystem>
-#include <vector>
+#include "VectorMesh.hpp"
 
-#include "Mesh.hpp"
-
-class PlanePrimitiveMesh : public Mesh {
+class PlanePrimitiveMesh : public VectorMesh {
 public:
-    PlanePrimitiveMesh(const float size) {
-        vertices = {
-            { -size / 2.f, 0.f, -size / 2.f, 0.f, 1.f, 0.f, 0.f, 0.f, -1.f, 1.f, 0.f, 0.f, 0.f, 0.f },
-            {  size / 2.f, 0.f, -size / 2.f, 0.f, 1.f, 0.f, 0.f, 0.f, -1.f, 1.f, 0.f, 0.f, 1.f, 0.f },
-            { -size / 2.f, 0.f,  size / 2.f, 0.f, 1.f, 0.f, 0.f, 0.f, -1.f, 1.f, 0.f, 0.f, 0.f, 1.f },
-            {  size / 2.f, 0.f,  size / 2.f, 0.f, 1.f, 0.f, 0.f, 0.f, -1.f, 1.f, 0.f, 0.f, 1.f, 1.f },
-        };
-
-        indices = { 0, 2, 1, 2, 3, 1 };
-    }
+    PlanePrimitiveMesh(const float size); 
 
     unsigned int GetNumElements() const {
         return numElements;
     }
 
-    const void* GetVertexData() const {
-        return vertices.data();
-    }
-    size_t GetVertexDataSize() const {
-        return sizeof(float) * vertices.size() * componentsPerVertex;
-    }
-
-    const void* GetIndices() const {
-        return indices.data();
-    }
-    size_t GetIndiciesSize() const {
-        return sizeof(unsigned int) * indices.size();
-    }
-
-    const VertexAttribInfoList& GetVertexAttribs() const {
-        return VertexAttribs;
-    }
-
 private:
-    static const size_t componentsPerVertex = 14;
-    static const VertexAttribInfoList VertexAttribs;
-
     static const unsigned int numElements = 6;
-    std::vector<std::array<float, componentsPerVertex>> vertices;
-    std::vector<unsigned int> indices;
-
 };

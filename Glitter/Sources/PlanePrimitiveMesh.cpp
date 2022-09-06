@@ -1,11 +1,12 @@
-#include <glad/glad.h>
-
 #include "PlanePrimitiveMesh.hpp"
 
-const VertexAttribInfoList PlanePrimitiveMesh::VertexAttribs = {
-    {"position", 3, GL_FLOAT},
-    {"normal", 3, GL_FLOAT},
-    {"tangent", 3, GL_FLOAT},
-    {"bitangent", 3, GL_FLOAT},
-    {"texcoord", 2, GL_FLOAT},
-};
+PlanePrimitiveMesh::PlanePrimitiveMesh(float size) {
+    vertices = {
+        { -size / 2.f, 0.f, -size / 2.f, 0.f, 1.f, 0.f, 0.f, 0.f, -1.f, 1.f, 0.f, 0.f, 0.f, 0.f },
+        {  size / 2.f, 0.f, -size / 2.f, 0.f, 1.f, 0.f, 0.f, 0.f, -1.f, 1.f, 0.f, 0.f, 1.f, 0.f },
+        { -size / 2.f, 0.f,  size / 2.f, 0.f, 1.f, 0.f, 0.f, 0.f, -1.f, 1.f, 0.f, 0.f, 0.f, 1.f },
+        {  size / 2.f, 0.f,  size / 2.f, 0.f, 1.f, 0.f, 0.f, 0.f, -1.f, 1.f, 0.f, 0.f, 1.f, 1.f },
+    };
+
+    indices = { 0, 2, 1, 2, 3, 1 };
+}
