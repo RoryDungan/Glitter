@@ -27,6 +27,9 @@ struct Graphics::CheshireCat {
 
     glm::vec3 color = glm::vec3(0.5f, 1.f, 0.5f);
     glm::vec3 lightColor = glm::vec3(1, 1, 1);
+    glm::vec3 lightStartPos = vec3(1.2f, 2.f, 1.f);
+    glm::vec3 lightPos = lightStartPos;
+
     float shininess = 10.f, diffuseMix = 1.f, specularMix = 1.f, normalsMix = 1.f;
 
     std::string error;
@@ -58,7 +61,7 @@ void Graphics::Init(ivec2 windowSize) {
         cc->monkeyShader->AttachShader("solid-colour.frag");
         cc->monkeyShader->Link();
         cc->monkeyShader->ConnectUniforms(
-            { "color", "shininess", "diffuseMix", "specularMix", "normalMapMix", "lightColor"}
+            { "color", "shininess", "diffuseMix", "specularMix", "normalMapMix", "lightColor", "lightPos"}
         );
 
         cc->monkey = std::make_unique<Drawable>(monkeyMesh, cc->monkeyShader);
@@ -134,9 +137,10 @@ void Graphics::Draw() {
         return;
     }
 
-    auto lightPos = vec3(1.2f, 1.f, 1.f);
-    auto lightMat = translate(mat4(1), lightPos);
+
+    auto lightMat = translate(rotate(mat4(1), time * radians(-20.f), vec3(0, 1, 0)), cc->lightStartPos);
     cc->pointLightDrawable->Draw(lightMat, cc->view, cc->proj);
+    cc->lightPos = vec3(lightMat[3]);
 
     auto monkeyPos = vec3(0, 0.9f, 0);
     auto monkeyModelMat = translate(rotate(
@@ -145,6 +149,7 @@ void Graphics::Draw() {
         vec3(0.f, 1.f, 0.f)
     ), monkeyPos);
 
+    cc->monkeyShader->SetUniform("lightPos", cc->lightPos);
     cc->monkey->Draw(monkeyModelMat, cc->view, cc->proj);
     cc->floor->Draw(mat4(1), cc->view, cc->proj);
 

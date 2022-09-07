@@ -14,5 +14,5 @@ public:
 
 private:
     struct CheshireCat;
-    std::unique_ptr<CheshireCat> cc;
+    const std::unique_ptr<CheshireCat> cc;
 };
