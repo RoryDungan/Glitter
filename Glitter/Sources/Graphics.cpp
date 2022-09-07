@@ -31,7 +31,7 @@ struct Graphics::CheshireCat {
     glm::vec3 lightStartPos = vec3(1.2f, 2.f, 1.f);
     glm::vec3 lightPos = lightStartPos;
 
-    float shininess = 10.f, diffuseMix = 1.f, specularMix = 1.f, normalsMix = 1.f;
+    float shininess = 32.f, diffuseMix = 1.f, specularMix = 1.f, normalsMix = 1.f;
 
     std::string error;
 };
