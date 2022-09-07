@@ -99,25 +99,33 @@ void Shader::ConnectUniforms(const std::vector<std::string>& uniformNames) {
     }
 }
 
-void Shader::BindTextures(const std::vector<TexSettings>& textureSettings) {
+void Shader::InitTextures(const std::vector<TexSettings>& textureSettings) {
     Activate();
 
-    std::vector<GLuint> textures(textureSettings.size());
+    textures.resize(textureSettings.size());
     glGenTextures(textureSettings.size(), textures.data());
     
     for (size_t i = 0; i < textureSettings.size(); ++i) {
         glActiveTexture(GL_TEXTURE0 + i);
         glBindTexture(GL_TEXTURE_2D, textures[i]);
         
-        int imgWidth, imgHeight, imgBitsPerPixel;
+        int imgWidth, imgHeight, channelsInFile;
+        auto str = textureSettings[i].path.string();
+        const char* f = str.c_str();
         auto* textureData = stbi_load(
-            textureSettings[i].path.string().c_str(),
+            f,
             &imgWidth,
             &imgHeight,
-            &imgBitsPerPixel,
+            &channelsInFile,
             0
         );
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imgWidth, imgHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, textureData);
+
+        if (channelsInFile == 3) {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imgWidth, imgHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, textureData);
+        }
+        else if (channelsInFile == 4) {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imgWidth, imgHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, textureData);
+        }
         stbi_image_free(textureData);
         
         glUniform1i(glGetUniformLocation(program, textureSettings[i].uniformName.c_str()), i);
@@ -125,6 +133,13 @@ void Shader::BindTextures(const std::vector<TexSettings>& textureSettings) {
         for (auto& param : textureSettings[i].params) {
             glTexParameteri(GL_TEXTURE_2D, param.first, param.second);
         }
+    }
+}
+
+void Shader::BindTextures() {
+    for (size_t i = 0; i < textures.size(); ++i) {
+        glActiveTexture(GL_TEXTURE0 + i);
+        glBindTexture(GL_TEXTURE_2D, textures[i]);
     }
 }
 

@@ -27,7 +27,7 @@ private:
     glm::mat4 view, proj;
 
     glm::vec3 color = glm::vec3(0.5f, 1.f, 0.5f);
-    float shininess = 10.f, diffuseMix = 1.f, specularMix = 1.f;
+    float shininess = 10.f, diffuseMix = 1.f, specularMix = 1.f, normalsMix = 1.f;
 
     std::string error;
 };

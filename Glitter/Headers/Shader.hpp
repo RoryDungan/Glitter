@@ -30,7 +30,7 @@ public:
     void Activate();
     void SetupVertexAttribs(const VertexAttribInfoList& vertexAttribs);
     void ConnectUniforms(const std::vector<std::string>& uniformNames);
-    void BindTextures(const std::vector<TexSettings>& textures);
+    void InitTextures(const std::vector<TexSettings>& textures);
     
     GLuint Get() {
         return program;
@@ -47,6 +47,8 @@ public:
         glUniform3fv(uniforms[name], 1, value_ptr(value));
     }
 
+    void BindTextures();
+
 
 private:
 
@@ -54,6 +56,7 @@ private:
     static void CompileShader(GLuint shader);
 
     std::map<std::string, GLint> uniforms;
+    std::vector<GLuint> textures;
 
     GLuint program;
 

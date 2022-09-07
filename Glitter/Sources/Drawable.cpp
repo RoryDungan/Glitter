@@ -62,6 +62,7 @@ Drawable::~Drawable() {
 void Drawable::Draw(mat4 model, mat4 view, mat4 projection) {
 
     shaderProgram->Activate();
+    shaderProgram->BindTextures();
     glBindVertexArray(vao);
 
     auto mvp = projection * view * model;
@@ -69,6 +70,7 @@ void Drawable::Draw(mat4 model, mat4 view, mat4 projection) {
 
     auto modelInverseTranspose = mat3(transpose(inverse(model)));
     glUniformMatrix3fv(modelInverseTransposeLocation, 1, GL_FALSE, value_ptr(modelInverseTranspose));
+    //glUniformMatrix3fv(modelInverseTransposeLocation, 1, GL_FALSE, value_ptr(model));
 
     glDrawElements(GL_TRIANGLES, numElements, GL_UNSIGNED_INT, 0);
 }

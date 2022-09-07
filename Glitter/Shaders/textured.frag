@@ -16,6 +16,7 @@ uniform vec3 color = vec3(0.5, 1, 0.5);
 uniform float shininess = 10;
 uniform float diffuseMix = 1;
 uniform float specularMix = 1;
+uniform float normalMapMix = 1;
 
 void main()
 {
@@ -24,11 +25,11 @@ void main()
 
 	vec3 viewDirection = normalize(worldSpaceCameraPos - gl_FragCoord.xyz);
 
-//    vec3 normal = texture(normalMap, Texcoord).rgb;
-//    normal = normal * 2.0 - 1; // Convert from 0..1 to -1..1
-//    normal = normalize(TBN * normal); // transform from tangent to world space
+    vec3 normalMapSample = texture(normalMap, Texcoord).rgb;
+    normalMapSample = normalMapSample * 2.0 - 1; // Convert from 0..1 to -1..1
+    vec3 normal = normalize(TBN * mix(vec3(0, 0, 1), normalMapSample, normalMapMix)); // transform from tangent to world space
 
-	vec3 normal = normalize(TBN * vec3(0,0,1));
+//	vec3 normal = normalize(TBN * vec3(0,0,1));
 
 	// compute the light by taking the dot product
 	// of the normal to the light's reverse direction
@@ -41,4 +42,6 @@ void main()
 	// Lets multiply just the color portion (not the alpha)
 	// by the light
 	outColor = vec4(texSample * light, 1);//texture(tex, Texcoord);
+
+//	outColor = vec4(normal, 1);
 }
