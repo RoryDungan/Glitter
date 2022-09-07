@@ -20,22 +20,22 @@ uniform float specularMix = 1;
 
 void main()
 {
-	vec3 _SpecularColor = vec3(1,1,1);
+    vec3 _SpecularColor = vec3(1,1,1);
 
-	vec3 normal = normalize(TBN * vec3(0,0,1));
+    vec3 normal = normalize(TBN * vec3(0,0,1));
 
-	vec3 lightDir = normalize(lightPos - FragPos);
+    vec3 lightDir = normalize(lightPos - FragPos);
 
-	// diffuse colour
-	vec3 diffuse = lightColor * max(dot(normal, lightDir), 0);
+    // diffuse colour
+    vec3 diffuse = lightColor * max(dot(normal, lightDir), 0);
 
-	// specular
-	vec3 viewDirection = normalize(worldSpaceCameraPos - FragPos);
-	vec3 reflectDir = reflect(-lightDir, normal);
+    // specular
+    vec3 viewDirection = normalize(worldSpaceCameraPos - FragPos);
+    vec3 reflectDir = reflect(-lightDir, normal);
     vec3 specular = pow(max(dot(viewDirection, reflectDir), 0), shininess) * lightColor;
 
-	// final light
-	vec3 light = ambientColor + diffuse * diffuseMix + specular * specularMix;
+    // final light
+    vec3 light = ambientColor + diffuse * diffuseMix + specular * specularMix;
 
-	outColor = vec4(color * light, 1);
+    outColor = vec4(color * light, 1);
 }

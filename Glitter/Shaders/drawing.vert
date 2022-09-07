@@ -16,7 +16,7 @@ uniform mat3 modelInverseTranspose;
 
 void main()
 {
-	FragPos = (model * vec4(position, 1.0)).xyz;
+    FragPos = (model * vec4(position, 1.0)).xyz;
 
     Texcoord = texcoord;
 

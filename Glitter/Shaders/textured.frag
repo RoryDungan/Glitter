@@ -22,27 +22,27 @@ uniform float normalMapMix = 1;
 
 void main()
 {
-	vec3 _SpecularColor = vec3(1,1,1);
+    vec3 _SpecularColor = vec3(1,1,1);
 
     vec3 normalMapSample = texture(normalMap, Texcoord).rgb;
     normalMapSample = normalMapSample * 2.0 - 1; // Convert from 0..1 to -1..1
     vec3 normal = normalize(TBN * mix(vec3(0, 0, 1), normalMapSample, normalMapMix)); // transform from tangent to world space
 
-	vec3 lightDir = normalize(lightPos - FragPos);
+    vec3 lightDir = normalize(lightPos - FragPos);
 
-	// diffuse colour
-	vec3 diffuse = lightColor * max(dot(normal, lightDir), 0);
+    // diffuse colour
+    vec3 diffuse = lightColor * max(dot(normal, lightDir), 0);
 
-	// specular
-	vec3 viewDirection = normalize(worldSpaceCameraPos - FragPos);
-	vec3 reflectDir = reflect(-lightDir, normal);
-	vec3 specular = _SpecularColor * pow(max(dot(viewDirection, reflectDir), 0), shininess);
+    // specular
+    vec3 viewDirection = normalize(worldSpaceCameraPos - FragPos);
+    vec3 reflectDir = reflect(-lightDir, normal);
+    vec3 specular = _SpecularColor * pow(max(dot(viewDirection, reflectDir), 0), shininess);
 
-	// final light
-	vec3 light = ambientColor + diffuse * diffuseMix + specular * specularMix;
+    // final light
+    vec3 light = ambientColor + diffuse * diffuseMix + specular * specularMix;
 
-	vec3 texSample = texture(tex, Texcoord).rgb;
-	// Lets multiply just the color portion (not the alpha)
-	// by the light
-	outColor = vec4(texSample * light, 1);
+    vec3 texSample = texture(tex, Texcoord).rgb;
+    // Lets multiply just the color portion (not the alpha)
+    // by the light
+    outColor = vec4(texSample * light, 1);
 }
