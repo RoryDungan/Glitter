@@ -34,6 +34,7 @@ void main()
 	vec3 reflectDir = reflect(-lightDir, normal);
 	vec3 specular = _SpecularColor * pow(max(dot(viewDirection, reflectDir), 0), shininess);
 
+	// final light
 	vec3 light = ambientColor + diffuse * diffuseMix + specular * specularMix;
 
 	// Lets multiply just the color portion (not the alpha)

@@ -22,6 +22,7 @@ struct Graphics::CheshireCat {
 
     std::shared_ptr<Shader> pointLightShader;
     std::shared_ptr<Shader> monkeyShader;
+    std::shared_ptr<Shader> floorShader;
 
     glm::mat4 view, proj;
 
@@ -67,11 +68,14 @@ void Graphics::Init(ivec2 windowSize) {
         cc->monkey = std::make_unique<Drawable>(monkeyMesh, cc->monkeyShader);
 
         PlanePrimitiveMesh floorMesh(3.f);
-        auto floorShader = std::make_shared<Shader>();
-        floorShader->AttachShader("drawing.vert");
-        floorShader->AttachShader("textured.frag");
-        floorShader->Link();
-        floorShader->InitTextures({
+        cc->floorShader = std::make_shared<Shader>();
+        cc->floorShader->AttachShader("drawing.vert");
+        cc->floorShader->AttachShader("textured.frag");
+        cc->floorShader->Link();
+        cc->floorShader->ConnectUniforms(
+            { "color", "shininess", "diffuseMix", "specularMix", "normalMapMix", "lightColor", "lightPos"}
+        );
+        cc->floorShader->InitTextures({
             {
                 "brickwall.jpg",
                 "tex",
@@ -94,7 +98,7 @@ void Graphics::Init(ivec2 windowSize) {
             },
         });
 
-        cc->floor = std::make_unique<Drawable>(floorMesh, floorShader);
+        cc->floor = std::make_unique<Drawable>(floorMesh, cc->floorShader);
 
         auto cameraPos = vec3(2.5f, 2.5f, 2.5f);
         cc->view = lookAt(
@@ -151,6 +155,7 @@ void Graphics::Draw() {
 
     cc->monkeyShader->SetUniform("lightPos", cc->lightPos);
     cc->monkey->Draw(monkeyModelMat, cc->view, cc->proj);
+    cc->floorShader->SetUniform("lightPos", cc->lightPos);
     cc->floor->Draw(mat4(1), cc->view, cc->proj);
 
     ImGui::Begin("Shader");
