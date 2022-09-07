@@ -14,8 +14,26 @@
 
 using namespace glm;
 
-Graphics::Graphics() {
-    timer = std::make_unique<Timer>();
+struct Graphics::CheshireCat {
+    std::unique_ptr<Timer> timer;
+    std::unique_ptr<Drawable> monkey;
+    std::unique_ptr<Drawable> floor;
+    std::unique_ptr<Drawable> pointLightDrawable;
+
+    std::shared_ptr<Shader> pointLightShader;
+    std::shared_ptr<Shader> monkeyShader;
+
+    glm::mat4 view, proj;
+
+    glm::vec3 color = glm::vec3(0.5f, 1.f, 0.5f);
+    glm::vec3 lightColor = glm::vec3(1, 1, 1);
+    float shininess = 10.f, diffuseMix = 1.f, specularMix = 1.f, normalsMix = 1.f;
+
+    std::string error;
+};
+
+Graphics::Graphics() : cc(std::make_unique<CheshireCat>()) {
+    cc->timer = std::make_unique<Timer>();
 }
 
 Graphics::~Graphics() = default;
@@ -26,24 +44,24 @@ void Graphics::Init(ivec2 windowSize) {
         glEnable(GL_CULL_FACE);
 
         CubePrimitiveMesh lightMesh(.1f);
-        pointLightShader = std::make_shared<Shader>();
-        pointLightShader->AttachShader("drawing.vert");
-        pointLightShader->AttachShader("light.frag");
-        pointLightShader->Link();
-        pointLightShader->ConnectUniforms({ "lightColor" });
+        cc->pointLightShader = std::make_shared<Shader>();
+        cc->pointLightShader->AttachShader("drawing.vert");
+        cc->pointLightShader->AttachShader("light.frag");
+        cc->pointLightShader->Link();
+        cc->pointLightShader->ConnectUniforms({ "lightColor" });
 
-        pointLightDrawable = std::make_unique<Drawable>(lightMesh, pointLightShader);
+        cc->pointLightDrawable = std::make_unique<Drawable>(lightMesh, cc->pointLightShader);
 
         FileMesh monkeyMesh("suzanne.obj");
-        monkeyShader = std::make_shared<Shader>();
-        monkeyShader->AttachShader("drawing.vert");
-        monkeyShader->AttachShader("solid-colour.frag");
-        monkeyShader->Link();
-        monkeyShader->ConnectUniforms(
+        cc->monkeyShader = std::make_shared<Shader>();
+        cc->monkeyShader->AttachShader("drawing.vert");
+        cc->monkeyShader->AttachShader("solid-colour.frag");
+        cc->monkeyShader->Link();
+        cc->monkeyShader->ConnectUniforms(
             { "color", "shininess", "diffuseMix", "specularMix", "normalMapMix", "lightColor"}
         );
 
-        monkey = std::make_unique<Drawable>(monkeyMesh, monkeyShader);
+        cc->monkey = std::make_unique<Drawable>(monkeyMesh, cc->monkeyShader);
 
         PlanePrimitiveMesh floorMesh(3.f);
         auto floorShader = std::make_shared<Shader>();
@@ -73,26 +91,26 @@ void Graphics::Init(ivec2 windowSize) {
             },
         });
 
-        floor = std::make_unique<Drawable>(floorMesh, floorShader);
+        cc->floor = std::make_unique<Drawable>(floorMesh, floorShader);
 
         auto cameraPos = vec3(2.5f, 2.5f, 2.5f);
-        view = lookAt(
+        cc->view = lookAt(
             cameraPos,
             vec3(0.f, 0.6f, 0.f),
             vec3(0.f, 1.f, 0.f)
         );
         UpdateAspect(windowSize);
 
-        timer->Start();
+        cc->timer->Start();
     }
     catch (std::runtime_error ex) {
-        error = ex.what();
+        cc->error = ex.what();
         std::cerr << ex.what() << std::endl;
     }
 }
 
 void Graphics::UpdateAspect(ivec2 windowSize) {
-    proj = perspective(
+    cc->proj = perspective(
         radians(45.f), 
         (float)windowSize.x / (float)windowSize.y, 
         1.f, 
@@ -101,24 +119,24 @@ void Graphics::UpdateAspect(ivec2 windowSize) {
 }
 
 void Graphics::Draw() {
-    timer->Update();
-    auto deltaTime = timer->GetDelta();
-    auto time = timer->GetTime();
+    cc->timer->Update();
+    auto deltaTime = cc->timer->GetDelta();
+    auto time = cc->timer->GetTime();
 
     // Background Fill Color
     glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    if (!error.empty()) {
+    if (!cc->error.empty()) {
         ImGui::Begin("Error");
-        ImGui::Text("%s", error.c_str());
+        ImGui::Text("%s", cc->error.c_str());
         ImGui::End();
         return;
     }
 
     auto lightPos = vec3(1.2f, 1.f, 1.f);
     auto lightMat = translate(mat4(1), lightPos);
-    pointLightDrawable->Draw(lightMat, view, proj);
+    cc->pointLightDrawable->Draw(lightMat, cc->view, cc->proj);
 
     auto monkeyPos = vec3(0, 0.9f, 0);
     auto monkeyModelMat = translate(rotate(
@@ -127,35 +145,35 @@ void Graphics::Draw() {
         vec3(0.f, 1.f, 0.f)
     ), monkeyPos);
 
-    monkey->Draw(monkeyModelMat, view, proj);
-    floor->Draw(mat4(1), view, proj);
+    cc->monkey->Draw(monkeyModelMat, cc->view, cc->proj);
+    cc->floor->Draw(mat4(1), cc->view, cc->proj);
 
     ImGui::Begin("Shader");
-    float tempColor[3] = { color.r, color.g, color.b };
+    float tempColor[3] = { cc->color.r, cc->color.g, cc->color.b };
     ImGui::ColorPicker3("Colour", (float*) & tempColor, 0);
-    color.x = tempColor[0];
-    color.y = tempColor[1];
-    color.z = tempColor[2];
-    monkeyShader->SetUniform("color", color);
+    cc->color.x = tempColor[0];
+    cc->color.y = tempColor[1];
+    cc->color.z = tempColor[2];
+    cc->monkeyShader->SetUniform("color", cc->color);
 
-    tempColor[0] = lightColor.r;
-    tempColor[1] = lightColor.g;
-    tempColor[2] = lightColor.b;
+    tempColor[0] = cc->lightColor.r;
+    tempColor[1] = cc->lightColor.g;
+    tempColor[2] = cc->lightColor.b;
     ImGui::ColorPicker3("Light colour", (float*) & tempColor, 0);
-    lightColor.x = tempColor[0];
-    lightColor.y = tempColor[1];
-    lightColor.z = tempColor[2];
-    monkeyShader->SetUniform("lightColor", lightColor);
-    pointLightShader->SetUniform("lightColor", lightColor);
+    cc->lightColor.x = tempColor[0];
+    cc->lightColor.y = tempColor[1];
+    cc->lightColor.z = tempColor[2];
+    cc->monkeyShader->SetUniform("lightColor", cc->lightColor);
+    cc->pointLightShader->SetUniform("lightColor", cc->lightColor);
 
-    ImGui::DragFloat("Shininess", &shininess, 0.1f, 0.f);
-    monkeyShader->SetUniform("shininess", shininess);
+    ImGui::DragFloat("Shininess", &cc->shininess, 0.1f, 0.f);
+    cc->monkeyShader->SetUniform("shininess", cc->shininess);
 
-    ImGui::SliderFloat("Diffuse", &diffuseMix, 0.f, 1.f);
-    monkeyShader->SetUniform("diffuseMix", diffuseMix);
+    ImGui::SliderFloat("Diffuse", &cc->diffuseMix, 0.f, 1.f);
+    cc->monkeyShader->SetUniform("diffuseMix", cc->diffuseMix);
 
-    ImGui::SliderFloat("Specular", &specularMix, 0.f, 1.f);
-    monkeyShader->SetUniform("specularMix", specularMix);
+    ImGui::SliderFloat("Specular", &cc->specularMix, 0.f, 1.f);
+    cc->monkeyShader->SetUniform("specularMix", cc->specularMix);
     //ImGui::SliderFloat("Normal map", &normalsMix, 0.f, 1.f);
     //monkeyShader->SetUniform("normalMapMix", normalsMix);
 
