@@ -99,6 +99,33 @@ void Shader::ConnectUniforms(const std::vector<std::string>& uniformNames) {
     }
 }
 
+void Shader::SetUniform(const std::string& name, const float& value) {
+    Activate();
+
+    auto uniformLocation = uniforms.find(name);
+    if (uniformLocation != uniforms.end()) {
+        glUniform1fv(uniformLocation->second, 1, &value);
+    }
+    else {
+        std::ostringstream ss;
+        ss << "Could not find uniform " << name << " on material.";
+        throw std::runtime_error(ss.str());
+    }
+}
+void Shader::SetUniform(const std::string& name, const glm::vec3& value) {
+    Activate();
+
+    auto uniformLocation = uniforms.find(name);
+    if (uniformLocation != uniforms.end()) {
+        glUniform3fv(uniformLocation->second, 1, value_ptr(value));
+    }
+    else {
+        std::ostringstream ss;
+        ss << "Could not find uniform " << name << " on material.";
+        throw std::runtime_error(ss.str());
+    }
+}
+
 void Shader::InitTextures(const std::vector<TexSettings>& textureSettings) {
     Activate();
 

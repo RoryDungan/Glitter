@@ -36,22 +36,8 @@ public:
         return program;
     }
 
-    void SetUniform(const std::string& name, const float& value) {
-        Activate();
-
-        auto uniformLocation = uniforms.find(name);
-        if (uniformLocation != uniforms.end()) {
-            glUniform1fv(uniformLocation->second, 1, &value);
-        }
-    }
-    void SetUniform(const std::string& name, const glm::vec3& value) {
-        Activate();
-
-        auto uniformLocation = uniforms.find(name);
-        if (uniformLocation != uniforms.end()) {
-            glUniform3fv(uniformLocation->second, 1, value_ptr(value));
-        }
-    }
+    void SetUniform(const std::string& name, const float& value);
+    void SetUniform(const std::string& name, const glm::vec3& value);
 
     void BindTextures();
 
