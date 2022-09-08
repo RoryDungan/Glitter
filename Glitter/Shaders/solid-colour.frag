@@ -1,41 +1,49 @@
 #version 330 core
 
+struct Material {
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+    float shininess;
+};
+
+struct Light {
+    vec3 position;
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+};
+
 in vec3 FragPos;
 in vec2 Texcoord;
 in mat3 TBN;
 
 out vec4 outColor;
 
+uniform Material material;
+uniform Light light;
+
 uniform vec3 worldSpaceCameraPos;
-uniform vec3 lightPos;
 
-//uniform vec3 reverseLightDirection;
 
-uniform vec3 color = vec3(0.5, 1, 0.5);
-uniform vec3 lightColor = vec3(1,1,1);
-uniform vec3 ambientColor = vec3(0.1, 0.1, 0.1);
-uniform float shininess = 32;
-uniform float diffuseMix = 1;
-uniform float specularMix = 1;
-
-void main()
-{
-    vec3 _SpecularColor = vec3(1,1,1);
-
+void main() {
     vec3 normal = normalize(TBN * vec3(0,0,1));
+    vec3 lightDir = normalize(light.position - FragPos);
 
-    vec3 lightDir = normalize(lightPos - FragPos);
+    // ambient
+    vec3 ambient = light.ambient * material.ambient;
 
     // diffuse colour
-    vec3 diffuse = lightColor * max(dot(normal, lightDir), 0);
+    float diff = max(dot(normal, lightDir), 0);
+    vec3 diffuse = light.diffuse * (diff * material.diffuse);
 
     // specular
     vec3 viewDirection = normalize(worldSpaceCameraPos - FragPos);
     vec3 reflectDir = reflect(-lightDir, normal);
-    vec3 specular = pow(max(dot(viewDirection, reflectDir), 0), shininess) * lightColor;
+    float spec = pow(max(dot(viewDirection, reflectDir), 0), material.shininess);
+    vec3 specular =  light.specular * (spec * material.specular);
 
     // final light
-    vec3 light = ambientColor + diffuse * diffuseMix + specular * specularMix;
-
-    outColor = vec4(color * light, 1);
+    vec3 result = ambient + diffuse + specular;
+    outColor = vec4(result, 1);
 }

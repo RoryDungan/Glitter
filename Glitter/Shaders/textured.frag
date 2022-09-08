@@ -1,4 +1,18 @@
-#version 150 core
+#version 330 core
+
+struct Material {
+    sampler2D diffuse;
+    sampler2D normal;
+    vec3 specular;
+    float shininess;
+};
+
+struct Light {
+    vec3 position;
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+};
 
 in vec3 FragPos;
 in mat3 TBN;
@@ -6,43 +20,33 @@ in vec2 Texcoord;
 
 out vec4 outColor;
 
-uniform sampler2D tex;
-uniform sampler2D normalMap;
+uniform Material material;
+uniform Light light;
 
 uniform vec3 worldSpaceCameraPos;
-uniform vec3 lightPos;
 
-uniform vec3 color = vec3(0.5, 1, 0.5);
-uniform vec3 lightColor = vec3(1,1,1);
-uniform vec3 ambientColor = vec3(0.1, 0.1, 0.1);
-uniform float shininess = 10;
-uniform float diffuseMix = 1;
-uniform float specularMix = 1;
-uniform float normalMapMix = 1;
 
 void main()
 {
-    vec3 _SpecularColor = vec3(1,1,1);
-
-    vec3 normalMapSample = texture(normalMap, Texcoord).rgb;
+    vec3 normalMapSample = texture(material.normal, Texcoord).rgb;
     normalMapSample = normalMapSample * 2.0 - 1; // Convert from 0..1 to -1..1
-    vec3 normal = normalize(TBN * mix(vec3(0, 0, 1), normalMapSample, normalMapMix)); // transform from tangent to world space
+    vec3 normal = normalize(TBN * normalMapSample); // transform from tangent to world space
+    vec3 lightDir = normalize(light.position - FragPos);
 
-    vec3 lightDir = normalize(lightPos - FragPos);
+    // ambient
+    vec3 ambient = light.ambient * texture(material.diffuse, Texcoord).rgb;
 
     // diffuse colour
-    vec3 diffuse = lightColor * max(dot(normal, lightDir), 0);
+    float diff = max(dot(normal, lightDir), 0);
+    vec3 diffuse = light.diffuse * diff * texture(material.diffuse, Texcoord).rgb;
 
     // specular
     vec3 viewDirection = normalize(worldSpaceCameraPos - FragPos);
     vec3 reflectDir = reflect(-lightDir, normal);
-    vec3 specular = _SpecularColor * pow(max(dot(viewDirection, reflectDir), 0), shininess);
+    float spec = pow(max(dot(viewDirection, reflectDir), 0), material.shininess);
+    vec3 specular =  light.specular * (spec * material.specular);
 
     // final light
-    vec3 light = ambientColor + diffuse * diffuseMix + specular * specularMix;
-
-    vec3 texSample = texture(tex, Texcoord).rgb;
-    // Lets multiply just the color portion (not the alpha)
-    // by the light
-    outColor = vec4(texSample * light, 1);
+    vec3 result = ambient + diffuse + specular;
+    outColor = vec4(result, 1);
 }

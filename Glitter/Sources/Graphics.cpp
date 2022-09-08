@@ -26,12 +26,14 @@ struct Graphics::CheshireCat {
 
     glm::mat4 view, proj;
 
-    glm::vec3 color = glm::vec3(0.5f, 1.f, 0.5f);
+    glm::vec3 ambient = glm::vec3(0.0215, 0.1745, 0.0215);
+    glm::vec3 diffuse = glm::vec3(0.07568, 0.61424, 0.07568);
+    glm::vec3 specular = glm::vec3(0.633, 0.727811, 0.633);
+    float shininess = 0.6f;
+
     glm::vec3 lightColor = glm::vec3(1, 1, 1);
     glm::vec3 lightStartPos = vec3(1.2f, 2.f, 1.f);
     glm::vec3 lightPos = lightStartPos;
-
-    float shininess = 32.f, diffuseMix = 1.f, specularMix = 1.f, normalsMix = 1.f;
 
     std::string error;
 };
@@ -61,9 +63,16 @@ void Graphics::Init(ivec2 windowSize) {
         cc->monkeyShader->AttachShader("drawing.vert");
         cc->monkeyShader->AttachShader("solid-colour.frag");
         cc->monkeyShader->Link();
-        cc->monkeyShader->ConnectUniforms(
-            { "color", "shininess", "diffuseMix", "specularMix", "normalMapMix", "lightColor", "lightPos"}
-        );
+        cc->monkeyShader->ConnectUniforms({ 
+            "material.ambient", 
+            "material.diffuse", 
+            "material.specular", 
+            "material.shininess",
+            "light.position", 
+            "light.ambient", 
+            "light.diffuse", 
+            "light.specular", 
+        });
 
         cc->monkey = std::make_unique<Drawable>(monkeyMesh, cc->monkeyShader);
 
@@ -72,13 +81,20 @@ void Graphics::Init(ivec2 windowSize) {
         cc->floorShader->AttachShader("drawing.vert");
         cc->floorShader->AttachShader("textured.frag");
         cc->floorShader->Link();
-        cc->floorShader->ConnectUniforms(
-            { "color", "shininess", "diffuseMix", "specularMix", "normalMapMix", "lightColor", "lightPos"}
-        );
+        cc->floorShader->ConnectUniforms({ 
+            "material.specular", 
+            "material.shininess", 
+            "light.position", 
+            "light.ambient", 
+            "light.diffuse", 
+            "light.specular", 
+        });
+        cc->floorShader->SetUniform("material.specular", vec3(0.5f));
+        cc->floorShader->SetUniform("material.shininess", 32.f);
         cc->floorShader->InitTextures({
             {
                 "brickwall.jpg",
-                "tex",
+                "material.diffuse",
                 {
                     {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
                     {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE},
@@ -88,7 +104,7 @@ void Graphics::Init(ivec2 windowSize) {
             },
             {
                 "brickwall_normal.jpg",
-                "normalMap",
+                "material.normal",
                 {
                     {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
                     {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE},
@@ -153,39 +169,60 @@ void Graphics::Draw() {
         vec3(0.f, 1.f, 0.f)
     ), monkeyPos);
 
-    cc->monkeyShader->SetUniform("lightPos", cc->lightPos);
+    cc->monkeyShader->SetUniform("light.position", cc->lightPos);
     cc->monkey->Draw(monkeyModelMat, cc->view, cc->proj);
-    cc->floorShader->SetUniform("lightPos", cc->lightPos);
+    cc->floorShader->SetUniform("light.position", cc->lightPos);
     cc->floor->Draw(mat4(1), cc->view, cc->proj);
 
     ImGui::Begin("Shader");
-    float tempColor[3] = { cc->color.r, cc->color.g, cc->color.b };
-    ImGui::ColorPicker3("Colour", (float*) & tempColor, 0);
-    cc->color.x = tempColor[0];
-    cc->color.y = tempColor[1];
-    cc->color.z = tempColor[2];
-    cc->monkeyShader->SetUniform("color", cc->color);
+    float tempColor[3];
 
     tempColor[0] = cc->lightColor.r;
     tempColor[1] = cc->lightColor.g;
     tempColor[2] = cc->lightColor.b;
     ImGui::ColorPicker3("Light colour", (float*) & tempColor, 0);
-    cc->lightColor.x = tempColor[0];
-    cc->lightColor.y = tempColor[1];
-    cc->lightColor.z = tempColor[2];
-    cc->monkeyShader->SetUniform("lightColor", cc->lightColor);
+    cc->lightColor.r = tempColor[0];
+    cc->lightColor.g = tempColor[1];
+    cc->lightColor.b = tempColor[2];
     cc->pointLightShader->SetUniform("lightColor", cc->lightColor);
+    cc->monkeyShader->SetUniform("light.ambient", cc->lightColor * 0.2f);
+    cc->monkeyShader->SetUniform("light.diffuse", cc->lightColor * 0.5f);
+    cc->monkeyShader->SetUniform("light.specular", cc->lightColor);
+    cc->floorShader->SetUniform("light.ambient", cc->lightColor * 0.2f);
+    cc->floorShader->SetUniform("light.diffuse", cc->lightColor);
+    cc->floorShader->SetUniform("light.specular", cc->lightColor);
+
+
+    // material props
+    tempColor[0] = cc->ambient.r;
+    tempColor[1] = cc->ambient.g;
+    tempColor[2] = cc->ambient.b;
+    ImGui::ColorPicker3("ambient", (float*) & tempColor, 0);
+    cc->ambient.r = tempColor[0];
+    cc->ambient.g = tempColor[1];
+    cc->ambient.b = tempColor[2];
+    cc->monkeyShader->SetUniform("material.ambient", cc->ambient);
+
+    tempColor[0] = cc->diffuse.r;
+    tempColor[1] = cc->diffuse.g;
+    tempColor[2] = cc->diffuse.b;
+    ImGui::ColorPicker3("diffuse", (float*) & tempColor, 0);
+    cc->diffuse.r = tempColor[0];
+    cc->diffuse.g = tempColor[1];
+    cc->diffuse.b = tempColor[2];
+    cc->monkeyShader->SetUniform("material.diffuse", cc->diffuse);
+
+    tempColor[0] = cc->specular.r;
+    tempColor[1] = cc->specular.g;
+    tempColor[2] = cc->specular.b;
+    ImGui::ColorPicker3("specular", (float*) & tempColor, 0);
+    cc->specular.r = tempColor[0];
+    cc->specular.g = tempColor[1];
+    cc->specular.b = tempColor[2];
+    cc->monkeyShader->SetUniform("material.specular", cc->specular);
 
     ImGui::DragFloat("Shininess", &cc->shininess, 0.1f, 0.f);
-    cc->monkeyShader->SetUniform("shininess", cc->shininess);
-
-    ImGui::SliderFloat("Diffuse", &cc->diffuseMix, 0.f, 1.f);
-    cc->monkeyShader->SetUniform("diffuseMix", cc->diffuseMix);
-
-    ImGui::SliderFloat("Specular", &cc->specularMix, 0.f, 1.f);
-    cc->monkeyShader->SetUniform("specularMix", cc->specularMix);
-    //ImGui::SliderFloat("Normal map", &normalsMix, 0.f, 1.f);
-    //monkeyShader->SetUniform("normalMapMix", normalsMix);
+    cc->monkeyShader->SetUniform("material.shininess", cc->shininess);
 
     ImGui::End();
 
