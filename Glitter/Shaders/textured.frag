@@ -3,7 +3,8 @@
 struct Material {
     sampler2D diffuse;
     sampler2D normal;
-    vec3 specular;
+    sampler2D specular;
+    sampler2D emission;
     float shininess;
 };
 
@@ -44,9 +45,12 @@ void main()
     vec3 viewDirection = normalize(worldSpaceCameraPos - FragPos);
     vec3 reflectDir = reflect(-lightDir, normal);
     float spec = pow(max(dot(viewDirection, reflectDir), 0), material.shininess);
-    vec3 specular =  light.specular * (spec * material.specular);
+    vec3 specular =  light.specular * spec * texture(material.specular, Texcoord).rgb;
+
+    // Emission
+    vec3 emission = texture(material.emission, Texcoord).rgb;
 
     // final light
-    vec3 result = ambient + diffuse + specular;
+    vec3 result = ambient + diffuse + specular + emission;
     outColor = vec4(result, 1);
 }

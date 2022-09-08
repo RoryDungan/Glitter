@@ -91,11 +91,10 @@ void Graphics::Init(ivec2 windowSize) {
             "light.diffuse", 
             "light.specular", 
         });
-        cc->floorShader->SetUniform("material.specular", vec3(0.5f));
         cc->floorShader->SetUniform("material.shininess", 32.f);
         cc->floorShader->InitTextures({
             {
-                "brickwall.jpg",
+                "container2.png",
                 "material.diffuse",
                 {
                     {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
@@ -105,7 +104,17 @@ void Graphics::Init(ivec2 windowSize) {
                 }
             },
             {
-                "brickwall_normal.jpg",
+                "container2_specular.png",
+                "material.specular",
+                {
+                    {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
+                    {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE},
+                    {GL_TEXTURE_MIN_FILTER, GL_LINEAR},
+                    {GL_TEXTURE_MAG_FILTER, GL_LINEAR}
+                }
+            },
+            {
+                "blue.png",
                 "material.normal",
                 {
                     {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
@@ -114,6 +123,16 @@ void Graphics::Init(ivec2 windowSize) {
                     {GL_TEXTURE_MAG_FILTER, GL_LINEAR}
                 }
             },
+            {
+                "matrix.jpg",
+                "material.emission",
+                {
+                    {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
+                    {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE},
+                    {GL_TEXTURE_MIN_FILTER, GL_LINEAR},
+                    {GL_TEXTURE_MAG_FILTER, GL_LINEAR}
+                }
+            }
         });
 
         cc->floor = std::make_unique<Drawable>(floorMesh, cc->floorShader);
