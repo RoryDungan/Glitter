@@ -38,6 +38,8 @@ struct Graphics::CheshireCat {
     std::string error;
 };
 
+static const ImGuiColorEditFlags ColorEditFlags = ImGuiColorEditFlags_PickerHueWheel;
+
 Graphics::Graphics() : cc(std::make_unique<CheshireCat>()) {
     cc->timer = std::make_unique<Timer>();
 }
@@ -180,7 +182,7 @@ void Graphics::Draw() {
     tempColor[0] = cc->lightColor.r;
     tempColor[1] = cc->lightColor.g;
     tempColor[2] = cc->lightColor.b;
-    ImGui::ColorPicker3("Light colour", (float*) & tempColor, 0);
+    ImGui::ColorEdit3("Light colour", (float*) & tempColor, ColorEditFlags);
     cc->lightColor.r = tempColor[0];
     cc->lightColor.g = tempColor[1];
     cc->lightColor.b = tempColor[2];
@@ -197,7 +199,7 @@ void Graphics::Draw() {
     tempColor[0] = cc->ambient.r;
     tempColor[1] = cc->ambient.g;
     tempColor[2] = cc->ambient.b;
-    ImGui::ColorPicker3("ambient", (float*) & tempColor, 0);
+    ImGui::ColorEdit3("ambient", (float*) & tempColor, ColorEditFlags);
     cc->ambient.r = tempColor[0];
     cc->ambient.g = tempColor[1];
     cc->ambient.b = tempColor[2];
@@ -206,7 +208,7 @@ void Graphics::Draw() {
     tempColor[0] = cc->diffuse.r;
     tempColor[1] = cc->diffuse.g;
     tempColor[2] = cc->diffuse.b;
-    ImGui::ColorPicker3("diffuse", (float*) & tempColor, 0);
+    ImGui::ColorEdit3("diffuse", (float*) & tempColor, ColorEditFlags);
     cc->diffuse.r = tempColor[0];
     cc->diffuse.g = tempColor[1];
     cc->diffuse.b = tempColor[2];
@@ -215,7 +217,7 @@ void Graphics::Draw() {
     tempColor[0] = cc->specular.r;
     tempColor[1] = cc->specular.g;
     tempColor[2] = cc->specular.b;
-    ImGui::ColorPicker3("specular", (float*) & tempColor, 0);
+    ImGui::ColorEdit3("specular", (float*) & tempColor, ColorEditFlags);
     cc->specular.r = tempColor[0];
     cc->specular.g = tempColor[1];
     cc->specular.b = tempColor[2];
