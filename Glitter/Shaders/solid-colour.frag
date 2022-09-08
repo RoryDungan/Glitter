@@ -9,9 +9,14 @@ struct Material {
 
 struct Light {
     vec3 position;
+
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
+
+    float constant;
+    float linear;
+    float quadratic;
 };
 
 in vec3 FragPos;
@@ -28,7 +33,13 @@ uniform vec3 worldSpaceCameraPos;
 
 void main() {
     vec3 normal = normalize(TBN * vec3(0,0,1));
-    vec3 lightDir = normalize(light.position - FragPos);
+    vec3 toLight = light.position - FragPos;
+    vec3 lightDir = normalize(toLight);
+
+    float distanceToLight = length(toLight);
+    float attenuation = 1.0 / (
+        light.constant + light.linear * distanceToLight + light.quadratic * distanceToLight * distanceToLight
+    );
 
     // ambient
     vec3 ambient = light.ambient * material.ambient;
@@ -44,6 +55,6 @@ void main() {
     vec3 specular =  light.specular * (spec * material.specular);
 
     // final light
-    vec3 result = ambient + diffuse + specular;
+    vec3 result = ambient * attenuation + diffuse * attenuation + specular * attenuation;
     outColor = vec4(result, 1);
 }

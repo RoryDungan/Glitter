@@ -19,11 +19,29 @@ struct Material {
     float shininess;
 };
 
+struct Light {
+    vec3 position;
+
+    vec3 ambient, diffuse, specular;
+
+    float constant, linear, quadratic;
+};
+
 static void SetMat(Shader& shader, const Material& mat) {
     shader.SetUniform("material.ambient", mat.ambient);
     shader.SetUniform("material.diffuse", mat.diffuse);
     shader.SetUniform("material.specular", mat.specular);
     shader.SetUniform("material.shininess", mat.shininess);
+}
+
+static void SetLight(Shader& shader, const Light& light) {
+    shader.SetUniform("light.position", light.position);
+    shader.SetUniform("light.ambient", light.ambient);
+    shader.SetUniform("light.diffuse", light.diffuse);
+    shader.SetUniform("light.specular", light.specular);
+    shader.SetUniform("light.constant", light.constant);
+    shader.SetUniform("light.linear", light.linear);
+    shader.SetUniform("light.quadratic", light.quadratic);
 }
 
 std::vector<Material> monkeyMats = {
@@ -96,9 +114,16 @@ struct Graphics::CheshireCat {
     glm::mat4 view, proj;
 
 
-    glm::vec3 lightColor = glm::vec3(1, 1, 1);
-    glm::vec3 lightStartPos = vec3(1.2f, 2.f, 1.f);
-    glm::vec3 lightPos = lightStartPos;
+    glm::vec3 lightStartPos = vec3(2.2f, 4.f, 2.f);
+    Light light = {
+        lightStartPos,
+
+        vec3(0.2),
+        vec3(1),
+        vec3(1),
+
+        1, 0.09, 0.032
+    };
 
     std::string error;
 };
@@ -140,6 +165,9 @@ void Graphics::Init(ivec2 windowSize) {
                 "light.ambient", 
                 "light.diffuse", 
                 "light.specular", 
+                "light.constant", 
+                "light.linear", 
+                "light.quadratic", 
             });
             SetMat(*shader, mat);
 
@@ -162,11 +190,14 @@ void Graphics::Init(ivec2 windowSize) {
             "light.ambient", 
             "light.diffuse", 
             "light.specular", 
+            "light.constant", 
+            "light.linear", 
+            "light.quadratic", 
         });
         cc->floorShader->SetUniform("material.shininess", 32.f);
         cc->floorShader->InitTextures({
             {
-                "container2.png",
+                "brickwall.jpg",
                 "material.diffuse",
                 {
                     {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
@@ -175,18 +206,18 @@ void Graphics::Init(ivec2 windowSize) {
                     {GL_TEXTURE_MAG_FILTER, GL_LINEAR}
                 }
             },
+            //{
+            //    "container2_specular.png",
+            //    "material.specular",
+            //    {
+            //        {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
+            //        {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE},
+            //        {GL_TEXTURE_MIN_FILTER, GL_LINEAR},
+            //        {GL_TEXTURE_MAG_FILTER, GL_LINEAR}
+            //    }
+            //},
             {
-                "container2_specular.png",
-                "material.specular",
-                {
-                    {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
-                    {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE},
-                    {GL_TEXTURE_MIN_FILTER, GL_LINEAR},
-                    {GL_TEXTURE_MAG_FILTER, GL_LINEAR}
-                }
-            },
-            {
-                "blue.png",
+                "brickwall_normal.jpg",
                 "material.normal",
                 {
                     {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
@@ -250,11 +281,21 @@ void Graphics::Draw() {
         return;
     }
 
-
-    auto lightMat = translate(rotate(mat4(1), time * radians(-20.f), vec3(0, 1, 0)), cc->lightStartPos);
+    // Move light
+    auto lightMat = translate(
+        rotate(
+            mat4(1), 
+            time * radians(-20.f), vec3(0, 1, 0)), 
+        cc->lightStartPos
+    );
+    cc->pointLightShader->SetUniform("lightColor", cc->light.specular);
     cc->pointLightDrawable->Draw(lightMat, cc->view, cc->proj);
-    cc->lightPos = vec3(lightMat[3]);
+    cc->light.position = vec3(lightMat[3]);
 
+    // Draw monkeys
+    for (auto shader : cc->monkeyShaders) {
+        SetLight(*shader, cc->light);
+    }
     for (auto i = 0; i < cc->monkies.size(); ++i) {
         const int rowSize = 3;
         const float spacing = 2.5f;
@@ -268,30 +309,53 @@ void Graphics::Draw() {
 
         cc->monkies[i]->Draw(monkeyModelMat, cc->view, cc->proj);
     }
-    cc->floorShader->SetUniform("light.position", cc->lightPos);
+    
+    // Draw floor
+    SetLight(*cc->floorShader, cc->light);
     cc->floor->Draw(mat4(1), cc->view, cc->proj);
 
+    // GUI
     ImGui::Begin("Shader");
     float tempColor[3];
 
-    tempColor[0] = cc->lightColor.r;
-    tempColor[1] = cc->lightColor.g;
-    tempColor[2] = cc->lightColor.b;
+    tempColor[0] = cc->light.specular.r;
+    tempColor[1] = cc->light.specular.g;
+    tempColor[2] = cc->light.specular.b;
     ImGui::ColorEdit3("Light colour", (float*) & tempColor, ColorEditFlags);
-    cc->lightColor.r = tempColor[0];
-    cc->lightColor.g = tempColor[1];
-    cc->lightColor.b = tempColor[2];
-    cc->pointLightShader->SetUniform("lightColor", cc->lightColor);
-    for (auto shader : cc->monkeyShaders) {
-        shader->SetUniform("light.ambient", cc->lightColor * 0.2f);
-        shader->SetUniform("light.diffuse", cc->lightColor * 0.5f);
-        shader->SetUniform("light.specular", cc->lightColor);
-        shader->SetUniform("light.position", cc->lightPos);
-    }
-    cc->floorShader->SetUniform("light.ambient", cc->lightColor * 0.2f);
-    cc->floorShader->SetUniform("light.diffuse", cc->lightColor);
-    cc->floorShader->SetUniform("light.specular", cc->lightColor);
+    cc->light.specular.r = tempColor[0];
+    cc->light.specular.g = tempColor[1];
+    cc->light.specular.b = tempColor[2];
+    cc->light.ambient = cc->light.specular * 0.2f;
+    cc->light.diffuse = cc->light.specular;
 
+    if (ImGui::TreeNode("Attenuation")) {
+        ImGui::DragFloat("Constant", &cc->light.constant, 0.01f, 0.f, 100.f, "%.5f");
+        ImGui::DragFloat("Linear", &cc->light.linear, 0.01f, 0.f, 1.f, "%.5f");
+        ImGui::DragFloat("Quadratic", &cc->light.quadratic, 0.01f, 0.f, 1.f, "%.5f");
+
+        const int numSamples = 100;
+
+        static float maxDistance = 50.f;
+
+        float graph[numSamples];
+        for (int i = 0; i < numSamples; ++i) {
+            const float dist = (float)i / (float)numSamples * maxDistance;
+            graph[i] = 1.f / (cc->light.constant + cc->light.linear * dist + cc->light.quadratic * dist * dist);
+        }
+        ImGui::PlotLines(
+            "Falloff",
+            graph,
+            numSamples,
+            0,
+            "",
+            0.f,
+            1.f,
+            ImVec2(0.f, 80.f)
+        );
+        ImGui::SliderFloat("preview scale", &maxDistance, 1.f, 100.f);
+
+        ImGui::TreePop();
+    }
 
     ImGui::End();
 

@@ -10,9 +10,14 @@ struct Material {
 
 struct Light {
     vec3 position;
+
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
+
+    float constant;
+    float linear;
+    float quadratic;
 };
 
 in vec3 FragPos;
@@ -32,7 +37,13 @@ void main()
     vec3 normalMapSample = texture(material.normal, Texcoord).rgb;
     normalMapSample = normalMapSample * 2.0 - 1; // Convert from 0..1 to -1..1
     vec3 normal = normalize(TBN * normalMapSample); // transform from tangent to world space
-    vec3 lightDir = normalize(light.position - FragPos);
+    vec3 toLight = light.position - FragPos;
+    vec3 lightDir = normalize(toLight);
+
+    float distanceToLight = length(toLight);
+    float attenuation = 1.0 / (
+        light.constant + light.linear * distanceToLight + light.quadratic * distanceToLight * distanceToLight
+    );
 
     // ambient
     vec3 ambient = light.ambient * texture(material.diffuse, Texcoord).rgb;
@@ -48,9 +59,9 @@ void main()
     vec3 specular =  light.specular * spec * texture(material.specular, Texcoord).rgb;
 
     // Emission
-    vec3 emission = texture(material.emission, Texcoord).rgb;
+    vec3 emission = vec3(0);//texture(material.emission, Texcoord).rgb;
 
     // final light
-    vec3 result = ambient + diffuse + specular + emission;
+    vec3 result = ambient * attenuation + diffuse * attenuation + specular * attenuation + emission;
     outColor = vec4(result, 1);
 }
