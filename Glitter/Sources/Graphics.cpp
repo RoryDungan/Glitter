@@ -14,22 +14,87 @@
 
 using namespace glm;
 
+struct Material {
+    vec3 ambient, diffuse, specular;
+    float shininess;
+};
+
+static void SetMat(Shader& shader, const Material& mat) {
+    shader.SetUniform("material.ambient", mat.ambient);
+    shader.SetUniform("material.diffuse", mat.diffuse);
+    shader.SetUniform("material.specular", mat.specular);
+    shader.SetUniform("material.shininess", mat.shininess);
+}
+
+std::vector<Material> monkeyMats = {
+    {   // Emerald
+        vec3(0.0215, 0.1745, 0.0215),
+        vec3(0.07568, 0.61424, 0.07568),
+        vec3(0.633, 0.727811, 0.633),
+        0.6f
+    },
+    {   // Jade
+        vec3(0.135, 0.2225, 0.0215),
+        vec3(0.54, 0.89, 0.63),
+        vec3(0.316228),
+        0.1f
+    },
+    {   // Obsidian
+        vec3(0.05375, 0.05, 0.06625),
+        vec3(0.18275, 0.17, 0.22525),
+        vec3(0.332741, 0.328634, 0.346435),
+        0.3f
+    },
+    {   // Pearl
+        vec3(0.25, 0.20725, 0.20725),
+        vec3(1, 0.829, 0.829),
+        vec3(0.296648),
+        0.088f
+    },
+    {   // Ruby
+        vec3(0.1745, 0.01175, 0.01175),
+        vec3(0.61424, 0.04136, 0.04136),
+        vec3(0.727811, 0.626959, 0.626959),
+        0.06f
+    },
+    {   // Green plastic
+        vec3(0),
+        vec3(0.1, 0.35, 0.1),
+        vec3(0.45, 0.55, 0.45),
+        0.25f
+    },
+    {   // White plastic
+        vec3(0),
+        vec3(0.55),
+        vec3(0.70),
+        0.25f
+    },
+    {   // Cyan rubber
+        vec3(0, 0.05, 0.05),
+        vec3(0.4, 0.5, 0.5),
+        vec3(0.04, 0.7, 0.7),
+        0.078125f
+    },
+    {   // Yellow rubber
+        vec3(0.05, 0.05, 0.00),
+        vec3(0.5, 0.5, 0.4),
+        vec3(0.7, 0.7, 0.04),
+        0.078125f
+    },
+};
+
 struct Graphics::CheshireCat {
     std::unique_ptr<Timer> timer;
-    std::unique_ptr<Drawable> monkey;
+    std::vector<std::unique_ptr<Drawable>> monkies;
     std::unique_ptr<Drawable> floor;
     std::unique_ptr<Drawable> pointLightDrawable;
 
     std::shared_ptr<Shader> pointLightShader;
-    std::shared_ptr<Shader> monkeyShader;
+    std::vector<std::shared_ptr<Shader>> monkeyShaders;
     std::shared_ptr<Shader> floorShader;
 
     glm::mat4 view, proj;
 
-    glm::vec3 ambient = glm::vec3(0.0215, 0.1745, 0.0215);
-    glm::vec3 diffuse = glm::vec3(0.07568, 0.61424, 0.07568);
-    glm::vec3 specular = glm::vec3(0.633, 0.727811, 0.633);
-    float shininess = 0.6f;
 
     glm::vec3 lightColor = glm::vec3(1, 1, 1);
     glm::vec3 lightStartPos = vec3(1.2f, 2.f, 1.f);
@@ -61,24 +126,31 @@ void Graphics::Init(ivec2 windowSize) {
         cc->pointLightDrawable = std::make_unique<Drawable>(lightMesh, cc->pointLightShader);
 
         FileMesh monkeyMesh("suzanne.obj");
-        cc->monkeyShader = std::make_shared<Shader>();
-        cc->monkeyShader->AttachShader("drawing.vert");
-        cc->monkeyShader->AttachShader("solid-colour.frag");
-        cc->monkeyShader->Link();
-        cc->monkeyShader->ConnectUniforms({ 
-            "material.ambient", 
-            "material.diffuse", 
-            "material.specular", 
-            "material.shininess",
-            "light.position", 
-            "light.ambient", 
-            "light.diffuse", 
-            "light.specular", 
-        });
+        for (const Material& mat : monkeyMats) {
+            auto shader = std::make_shared<Shader>();
+            shader->AttachShader("drawing.vert");
+            shader->AttachShader("solid-colour.frag");
+            shader->Link();
+            shader->ConnectUniforms({ 
+                "material.ambient", 
+                "material.diffuse", 
+                "material.specular", 
+                "material.shininess",
+                "light.position", 
+                "light.ambient", 
+                "light.diffuse", 
+                "light.specular", 
+            });
+            SetMat(*shader, mat);
 
-        cc->monkey = std::make_unique<Drawable>(monkeyMesh, cc->monkeyShader);
+            auto drawable = std::make_unique<Drawable>(monkeyMesh, shader);
 
-        PlanePrimitiveMesh floorMesh(3.f);
+            cc->monkies.push_back(std::move(drawable));
+            cc->monkeyShaders.push_back(shader);
+        }
+
+
+        PlanePrimitiveMesh floorMesh(10.f);
         cc->floorShader = std::make_shared<Shader>();
         cc->floorShader->AttachShader("drawing.vert");
         cc->floorShader->AttachShader("textured.frag");
@@ -123,21 +195,21 @@ void Graphics::Init(ivec2 windowSize) {
                     {GL_TEXTURE_MAG_FILTER, GL_LINEAR}
                 }
             },
-            {
-                "matrix.jpg",
-                "material.emission",
-                {
-                    {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
-                    {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE},
-                    {GL_TEXTURE_MIN_FILTER, GL_LINEAR},
-                    {GL_TEXTURE_MAG_FILTER, GL_LINEAR}
-                }
-            }
+            //{
+            //    "matrix.jpg",
+            //    "material.emission",
+            //    {
+            //        {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
+            //        {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE},
+            //        {GL_TEXTURE_MIN_FILTER, GL_LINEAR},
+            //        {GL_TEXTURE_MAG_FILTER, GL_LINEAR}
+            //    }
+            //}
         });
 
         cc->floor = std::make_unique<Drawable>(floorMesh, cc->floorShader);
 
-        auto cameraPos = vec3(2.5f, 2.5f, 2.5f);
+        auto cameraPos = vec3(10.f, 10.f, 10.f);
         cc->view = lookAt(
             cameraPos,
             vec3(0.f, 0.6f, 0.f),
@@ -158,7 +230,7 @@ void Graphics::UpdateAspect(ivec2 windowSize) {
         radians(45.f), 
         (float)windowSize.x / (float)windowSize.y, 
         1.f, 
-        10.f
+        100.f
     );
 }
 
@@ -183,15 +255,19 @@ void Graphics::Draw() {
     cc->pointLightDrawable->Draw(lightMat, cc->view, cc->proj);
     cc->lightPos = vec3(lightMat[3]);
 
-    auto monkeyPos = vec3(0, 0.9f, 0);
-    auto monkeyModelMat = translate(rotate(
-        mat4(1.f), 
-        time * radians(10.f), 
-        vec3(0.f, 1.f, 0.f)
-    ), monkeyPos);
+    for (auto i = 0; i < cc->monkies.size(); ++i) {
+        const int rowSize = 3;
+        const float spacing = 2.5f;
+        auto monkeyPos = vec3(i / rowSize * spacing, 0.9f, i % rowSize * spacing) - vec3(2.5, 0, 2.5);
 
-    cc->monkeyShader->SetUniform("light.position", cc->lightPos);
-    cc->monkey->Draw(monkeyModelMat, cc->view, cc->proj);
+        auto monkeyModelMat = rotate(
+            translate(mat4(1.f), monkeyPos),
+            time * radians(10.f),
+            vec3(0.f, 1.f, 0.f)
+        );
+
+        cc->monkies[i]->Draw(monkeyModelMat, cc->view, cc->proj);
+    }
     cc->floorShader->SetUniform("light.position", cc->lightPos);
     cc->floor->Draw(mat4(1), cc->view, cc->proj);
 
@@ -206,44 +282,16 @@ void Graphics::Draw() {
     cc->lightColor.g = tempColor[1];
     cc->lightColor.b = tempColor[2];
     cc->pointLightShader->SetUniform("lightColor", cc->lightColor);
-    cc->monkeyShader->SetUniform("light.ambient", cc->lightColor * 0.2f);
-    cc->monkeyShader->SetUniform("light.diffuse", cc->lightColor * 0.5f);
-    cc->monkeyShader->SetUniform("light.specular", cc->lightColor);
+    for (auto shader : cc->monkeyShaders) {
+        shader->SetUniform("light.ambient", cc->lightColor * 0.2f);
+        shader->SetUniform("light.diffuse", cc->lightColor * 0.5f);
+        shader->SetUniform("light.specular", cc->lightColor);
+        shader->SetUniform("light.position", cc->lightPos);
+    }
     cc->floorShader->SetUniform("light.ambient", cc->lightColor * 0.2f);
     cc->floorShader->SetUniform("light.diffuse", cc->lightColor);
     cc->floorShader->SetUniform("light.specular", cc->lightColor);
 
-
-    // material props
-    tempColor[0] = cc->ambient.r;
-    tempColor[1] = cc->ambient.g;
-    tempColor[2] = cc->ambient.b;
-    ImGui::ColorEdit3("ambient", (float*) & tempColor, ColorEditFlags);
-    cc->ambient.r = tempColor[0];
-    cc->ambient.g = tempColor[1];
-    cc->ambient.b = tempColor[2];
-    cc->monkeyShader->SetUniform("material.ambient", cc->ambient);
-
-    tempColor[0] = cc->diffuse.r;
-    tempColor[1] = cc->diffuse.g;
-    tempColor[2] = cc->diffuse.b;
-    ImGui::ColorEdit3("diffuse", (float*) & tempColor, ColorEditFlags);
-    cc->diffuse.r = tempColor[0];
-    cc->diffuse.g = tempColor[1];
-    cc->diffuse.b = tempColor[2];
-    cc->monkeyShader->SetUniform("material.diffuse", cc->diffuse);
-
-    tempColor[0] = cc->specular.r;
-    tempColor[1] = cc->specular.g;
-    tempColor[2] = cc->specular.b;
-    ImGui::ColorEdit3("specular", (float*) & tempColor, ColorEditFlags);
-    cc->specular.r = tempColor[0];
-    cc->specular.g = tempColor[1];
-    cc->specular.b = tempColor[2];
-    cc->monkeyShader->SetUniform("material.specular", cc->specular);
-
-    ImGui::DragFloat("Shininess", &cc->shininess, 0.1f, 0.f);
-    cc->monkeyShader->SetUniform("material.shininess", cc->shininess);
 
     ImGui::End();
 
