@@ -10,6 +10,9 @@ struct Material {
 
 struct Light {
     vec3 position;
+    vec3 direction;
+    float cutOff;
+    float outerCutOff;
 
     vec3 ambient;
     vec3 diffuse;
@@ -45,6 +48,11 @@ void main()
         light.constant + light.linear * distanceToLight + light.quadratic * distanceToLight * distanceToLight
     );
 
+    // spotlight cone
+    float theta = dot(lightDir, normalize(-light.direction));
+    float epsilon = light.cutOff - light.outerCutOff;
+    float intensity = clamp((theta - light.outerCutOff) / epsilon, 0, 1);
+
     // ambient
     vec3 ambient = light.ambient * texture(material.diffuse, Texcoord).rgb;
 
@@ -62,6 +70,9 @@ void main()
     vec3 emission = vec3(0);//texture(material.emission, Texcoord).rgb;
 
     // final light
-    vec3 result = ambient * attenuation + diffuse * attenuation + specular * attenuation + emission;
+    vec3 result = ambient * attenuation + 
+        diffuse * attenuation * intensity + 
+        specular * attenuation * intensity + 
+        emission;
     outColor = vec4(result, 1);
 }

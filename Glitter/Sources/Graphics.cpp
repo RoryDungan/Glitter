@@ -20,7 +20,9 @@ struct Material {
 };
 
 struct Light {
-    vec3 position;
+    vec3 position, direction;
+
+    float cutOff, outerCutOff;
 
     vec3 ambient, diffuse, specular;
 
@@ -36,6 +38,9 @@ static void SetMat(Shader& shader, const Material& mat) {
 
 static void SetLight(Shader& shader, const Light& light) {
     shader.SetUniform("light.position", light.position);
+    shader.SetUniform("light.direction", light.direction);
+    shader.SetUniform("light.cutOff", light.cutOff);
+    shader.SetUniform("light.outerCutOff", light.outerCutOff);
     shader.SetUniform("light.ambient", light.ambient);
     shader.SetUniform("light.diffuse", light.diffuse);
     shader.SetUniform("light.specular", light.specular);
@@ -117,12 +122,16 @@ struct Graphics::CheshireCat {
     glm::vec3 lightStartPos = vec3(2.2f, 4.f, 2.f);
     Light light = {
         lightStartPos,
+        normalize(vec3(0) - lightStartPos), // look towards the center of the scene
+        cos(radians(25.5f)),
+        cos(radians(30.5f)),
 
         vec3(0.2),
         vec3(1),
         vec3(1),
 
-        1, 0.09, 0.032
+        //1, 0.09, 0.032 // distance 50
+        1, 0.027, 0.0028 // distance 160
     };
 
     std::string error;
@@ -162,6 +171,9 @@ void Graphics::Init(ivec2 windowSize) {
                 "material.specular", 
                 "material.shininess",
                 "light.position", 
+                "light.direction", 
+                "light.cutOff", 
+                "light.outerCutOff", 
                 "light.ambient", 
                 "light.diffuse", 
                 "light.specular", 
@@ -187,6 +199,9 @@ void Graphics::Init(ivec2 windowSize) {
             "material.specular", 
             "material.shininess", 
             "light.position", 
+            "light.direction", 
+            "light.cutOff", 
+            "light.outerCutOff", 
             "light.ambient", 
             "light.diffuse", 
             "light.specular", 
@@ -291,6 +306,7 @@ void Graphics::Draw() {
     cc->pointLightShader->SetUniform("lightColor", cc->light.specular);
     cc->pointLightDrawable->Draw(lightMat, cc->view, cc->proj);
     cc->light.position = vec3(lightMat[3]);
+    cc->light.direction = normalize(vec3(0) - cc->light.position);
 
     // Draw monkeys
     for (auto shader : cc->monkeyShaders) {
