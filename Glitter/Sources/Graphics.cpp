@@ -120,11 +120,13 @@ struct Graphics::CheshireCat {
 
 
     glm::vec3 lightStartPos = vec3(2.2f, 4.f, 2.f);
+    float lightInnerCutoffDegrees = 25.f;
+    float lightEdgeRadiusDegrees = 5.f;
     Light light = {
         lightStartPos,
         normalize(vec3(0) - lightStartPos), // look towards the center of the scene
-        cos(radians(25.5f)),
-        cos(radians(30.5f)),
+        cos(radians(lightInnerCutoffDegrees)),
+        cos(radians(lightInnerCutoffDegrees + lightEdgeRadiusDegrees)),
 
         vec3(0.2),
         vec3(1),
@@ -307,6 +309,8 @@ void Graphics::Draw() {
     cc->pointLightDrawable->Draw(lightMat, cc->view, cc->proj);
     cc->light.position = vec3(lightMat[3]);
     cc->light.direction = normalize(vec3(0) - cc->light.position);
+    cc->light.cutOff = cos(radians(cc->lightInnerCutoffDegrees));
+    cc->light.outerCutOff = cos(radians(cc->lightInnerCutoffDegrees + cc->lightEdgeRadiusDegrees));
 
     // Draw monkeys
     for (auto shader : cc->monkeyShaders) {
@@ -370,6 +374,12 @@ void Graphics::Draw() {
         );
         ImGui::SliderFloat("preview scale", &maxDistance, 1.f, 100.f);
 
+        ImGui::TreePop();
+    }
+
+    if (ImGui::TreeNode("Cutoff")) {
+        ImGui::SliderFloat("Radius", &cc->lightInnerCutoffDegrees, 0.f, 180.f, "%.2f°");
+        ImGui::SliderFloat("Edge size", &cc->lightEdgeRadiusDegrees, 0.f, 180.f, "%.2f°");
         ImGui::TreePop();
     }
 

@@ -43,6 +43,7 @@ void main()
     vec3 toLight = light.position - FragPos;
     vec3 lightDir = normalize(toLight);
 
+    // distance attenuation
     float distanceToLight = length(toLight);
     float attenuation = 1.0 / (
         light.constant + light.linear * distanceToLight + light.quadratic * distanceToLight * distanceToLight
