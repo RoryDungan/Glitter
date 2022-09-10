@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <glad/glad.h>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
