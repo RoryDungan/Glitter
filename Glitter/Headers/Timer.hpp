@@ -5,11 +5,11 @@
 class Timer {
 public:
     void Start() {
-        startTime = lastFrameTime = now = std::chrono::high_resolution_clock::now();
+        startTime = lastFrameTime = now = std::chrono::steady_clock::now();
     }
     void Update() {
         lastFrameTime = now;
-        now = std::chrono::high_resolution_clock::now();
+        now = std::chrono::steady_clock::now();
     }
 
     float GetTime() {
