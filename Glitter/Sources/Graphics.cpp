@@ -267,7 +267,7 @@ void Graphics::Init(ivec2 windowSize) {
 
         cc->timer->Start();
     }
-    catch (std::runtime_error ex) {
+    catch (std::runtime_error& ex) {
         cc->error = ex.what();
         std::cerr << ex.what() << std::endl;
     }
@@ -316,7 +316,7 @@ void Graphics::Draw() {
     for (auto shader : cc->monkeyShaders) {
         SetLight(*shader, cc->light);
     }
-    for (auto i = 0; i < cc->monkies.size(); ++i) {
+    for (size_t i = 0; i < cc->monkies.size(); ++i) {
         const int rowSize = 3;
         const float spacing = 2.5f;
         auto monkeyPos = vec3(i / rowSize * spacing, 0.9f, i % rowSize * spacing) - vec3(2.5, 0, 2.5);
