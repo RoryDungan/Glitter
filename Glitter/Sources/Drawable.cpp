@@ -63,7 +63,7 @@ Drawable::~Drawable() {
     }
 }
 
-void Drawable::Draw(mat4 model, mat4 view, mat4 projection) {
+void Drawable::Draw(const mat4& model, const mat4& view, const mat4& projection) const {
     shaderProgram->Activate();
     shaderProgram->BindTextures();
     glBindVertexArray(vao);
