@@ -419,7 +419,11 @@ void Graphics::Init(ivec2 windowSize) {
         cc->screenShader->AttachShader("framebuffer-display.vert");
         cc->screenShader->AttachShader("framebuffer-display.frag");
         cc->screenShader->Link();
-        cc->screenShader->ConnectUniforms({ "screenTexture", "time"});
+        cc->screenShader->ConnectUniforms({ 
+            "screenTexture", 
+            "time", 
+            "clipPos"
+        });
         cc->screenShader->SetUniform("screenTexture", 0);
 
         float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.

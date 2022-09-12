@@ -4,7 +4,10 @@ layout (location = 1) in vec2 aTexCoords;
 
 out vec2 TexCoords;
 
+uniform vec4 clipPos = vec4(0,0,1,1);
+
 void main() {
-    gl_Position = vec4(aPos.x, aPos.y, 0.0, 1.0);
+    vec2 pos = aPos * clipPos.zw + clipPos.xy;
+    gl_Position = vec4(pos.x, pos.y, 0.0, 1.0);
     TexCoords = aTexCoords;
 }
