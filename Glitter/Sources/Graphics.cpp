@@ -395,7 +395,7 @@ void Graphics::Init(ivec2 windowSize) {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, cc->renderTexture);
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1280, 800, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, windowSize.x, windowSize.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -406,7 +406,7 @@ void Graphics::Init(ivec2 windowSize) {
         // Create a renderbuffer objct for depth and stencil attachment
         glGenRenderbuffers(1, &cc->rbo);
         glBindRenderbuffer(GL_RENDERBUFFER, cc->rbo);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1280, 800);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, windowSize.x, windowSize.y);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, cc->rbo);
         // now that we actually created the framebuffer and added all attachments we want to check if it is actually complete now
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
@@ -442,6 +442,12 @@ void Graphics::Init(ivec2 windowSize) {
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
+        cc->proj = perspective(
+            radians(45.f), 
+            (float)windowSize.x / (float)windowSize.y, 
+            1.f, 
+            100.f
+        );
 
         // Done!
         cc->timer->Start();
@@ -459,6 +465,16 @@ void Graphics::UpdateAspect(ivec2 windowSize) {
         1.f, 
         100.f
     );
+
+    // resize renderbuffer color attachment
+    glBindTexture(GL_TEXTURE_2D, cc->renderTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, windowSize.x, windowSize.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // resize depth attachment
+    glBindRenderbuffer(GL_RENDERBUFFER, cc->rbo);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, windowSize.x, windowSize.y);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
 }
 
 void Graphics::Draw() {
