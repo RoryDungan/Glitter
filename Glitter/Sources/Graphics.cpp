@@ -148,9 +148,6 @@ struct Graphics::CheshireCat {
 
 
     void DrawFirstPass(float deltaTime, float time) {
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-        glEnable(GL_DEPTH_TEST);
-
         // Background Fill Color
         glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -418,6 +415,9 @@ void Graphics::Init(ivec2 windowSize) {
         cc->screenShader = std::make_unique<Shader>();
         cc->screenShader->AttachShader("framebuffer-display.vert");
         cc->screenShader->AttachShader("framebuffer-display.frag");
+        //cc->screenShader->AttachShader("wave-postprocess.frag");
+        //cc->screenShader->AttachShader("edge-detect-postprocess.frag");
+        //cc->screenShader->AttachShader("blur-postprocess.frag");
         cc->screenShader->Link();
         cc->screenShader->ConnectUniforms({ 
             "screenTexture", 
@@ -486,6 +486,9 @@ void Graphics::Draw() {
     auto deltaTime = cc->timer->GetDelta();
     auto time = cc->timer->GetTime();
 
+    // first pass
+    glBindFramebuffer(GL_FRAMEBUFFER, cc->fbo);
+    glEnable(GL_DEPTH_TEST);
     cc->DrawFirstPass(deltaTime, time);
 
     // second pass
