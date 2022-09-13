@@ -56,6 +56,12 @@ void Window::LoopUntilDone() {
     glfwTerminate();
 }
 
+glm::ivec2 Window::GetFramebufferSize() const {
+    glm::ivec2 size;
+    glfwGetFramebufferSize(window, &size.x, &size.y);
+    return size;
+}
+
 void Window::OnResize(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
     graphics->UpdateAspect(glm::ivec2(width, height));
