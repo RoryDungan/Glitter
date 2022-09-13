@@ -2,12 +2,14 @@
 
 out vec4 FragColor;
 
-in vec2 TexCoords;
+in VS_OUT {
+    vec2 TexCoords;
+} fs_in;
 
 uniform sampler2D screenTexture;
 uniform float time;
 
 void main() {
-    float displacement = sin(TexCoords.x * 80 + time) * 0.01;
-    FragColor = texture(screenTexture, vec2(TexCoords.x, TexCoords.y + displacement));
+    float displacement = sin(fs_in.TexCoords.x * 80 + time) * 0.01;
+    FragColor = texture(screenTexture, vec2(fs_in.TexCoords.x, fs_in.TexCoords.y + displacement));
 }

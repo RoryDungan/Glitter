@@ -22,9 +22,12 @@ struct Light {
     float quadratic;
 };
 
-in vec3 FragPos;
-in vec2 Texcoord;
-in mat3 TBN;
+
+in VS_OUT {
+    vec3 FragPos;
+    vec2 Texcoord;
+    mat3 TBN;
+} fs_in;
 
 out vec4 outColor;
 
@@ -35,8 +38,8 @@ uniform vec3 worldSpaceCameraPos;
 
 
 void main() {
-    vec3 normal = normalize(TBN * vec3(0,0,1));
-    vec3 toLight = light.position - FragPos;
+    vec3 normal = normalize(fs_in.TBN * vec3(0,0,1));
+    vec3 toLight = light.position - fs_in.FragPos;
     vec3 lightDir = normalize(toLight);
 
     float distanceToLight = length(toLight);
@@ -57,7 +60,7 @@ void main() {
     vec3 diffuse = light.diffuse * (diff * material.diffuse);
 
     // specular
-    vec3 viewDirection = normalize(worldSpaceCameraPos - FragPos);
+    vec3 viewDirection = normalize(worldSpaceCameraPos - fs_in.FragPos);
     vec3 reflectDir = reflect(-lightDir, normal);
     float spec = pow(max(dot(viewDirection, reflectDir), 0), material.shininess);
     vec3 specular =  light.specular * (spec * material.specular);

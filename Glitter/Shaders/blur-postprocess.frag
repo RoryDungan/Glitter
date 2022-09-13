@@ -2,7 +2,9 @@
 
 out vec4 FragColor;
 
-in vec2 TexCoords;
+in VS_OUT {
+    vec2 TexCoords;
+} fs_in;
 
 uniform sampler2D screenTexture;
 uniform float time;
@@ -31,7 +33,7 @@ void main() {
 
     vec3 sampleTex[9];
     for (int i = 0; i < 9; ++i) {
-        sampleTex[i] = vec3(texture(screenTexture, TexCoords.st + offsets[i]));
+        sampleTex[i] = vec3(texture(screenTexture, fs_in.TexCoords.st + offsets[i]));
     }
     vec3 col = vec3(0.0);
     for (int i = 0; i < 9; ++i) {
