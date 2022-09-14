@@ -63,14 +63,22 @@ Drawable::~Drawable() {
     }
 }
 
-void Drawable::Draw(const mat4& model, const mat4& view, const mat4& projection) const {
-    shaderProgram->Activate();
-    shaderProgram->BindTextures();
+void Drawable::Draw(
+    const mat4& model, 
+    const mat4& view, 
+    const mat4& projection,
+    std::shared_ptr<Shader> overrideShader 
+) const {
+    auto shader = overrideShader == nullptr ? shaderProgram : overrideShader;
+    shader->Activate();
+    shader->BindTextures();
+
     glBindVertexArray(vao);
 
     auto mvp = projection * view * model;
     glUniformMatrix4fv(modelLocation, 1, GL_FALSE, value_ptr(model));
-    glUniformMatrix4fv(modelViewProjectionLocation, 1, GL_FALSE, value_ptr(mvp));
+    
+    glUniformMatrix4fv(glGetUniformLocation(shader->Get(), "modelViewProjection"), 1, GL_FALSE, value_ptr(mvp));
 
     auto modelInverseTranspose = mat3(transpose(inverse(model)));
     glUniformMatrix3fv(modelInverseTransposeLocation, 1, GL_FALSE, value_ptr(modelInverseTranspose));

@@ -13,7 +13,12 @@ public:
 
     ~Drawable();
 
-    void Draw(const glm::mat4& model, const glm::mat4& view, const glm::mat4& projection) const;
+    void Draw(
+        const glm::mat4& model, 
+        const glm::mat4& view, 
+        const glm::mat4& projection, 
+        std::shared_ptr<Shader> overrideShader = nullptr
+    ) const;
 
 private:
     std::shared_ptr<Shader> shaderProgram;

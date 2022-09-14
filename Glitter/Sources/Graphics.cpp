@@ -50,6 +50,8 @@ static void SetLight(Shader& shader, const Light& light) {
     shader.SetUniform("light.quadratic", light.quadratic);
 }
 
+static const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+
 std::vector<Material> monkeyMats = {
     {   // Emerald
         vec3(0.0215f, 0.1745f, 0.0215f),
@@ -119,8 +121,9 @@ struct Graphics::CheshireCat {
     std::vector<std::shared_ptr<Shader>> monkeyShaders;
     std::shared_ptr<Shader> floorShader;
 
-    mat4 view = mat4(), proj = mat4();
+    mat4 cameraView = mat4(), cameraProj = mat4();
 
+    ivec2 framebufferSize;
 
     vec3 lightStartPos = vec3(2.2f, 4.f, 2.f);
     float lightInnerCutoffDegrees = 50.f;
@@ -138,7 +141,10 @@ struct Graphics::CheshireCat {
         //1, 0.09, 0.032 // distance 50
         1.f, 0.027f, 0.0028f // distance 160
     };
-    GLuint depthMapFBO = 0;
+    mat4 lightMat = mat4(1);
+
+    GLuint depthMapFBO = 0, depthMap;
+    std::shared_ptr<Shader> depthShader;
 
     GLuint fbo = 0, rbo = 0, quadVAO = 0, quadVBO = 0;
     GLuint renderTexture = 0;
@@ -148,36 +154,194 @@ struct Graphics::CheshireCat {
     std::string error;
 
 
-    void DrawFirstPass(float deltaTime, float time) {
-        // Background Fill Color
-        glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    void InitScene() {
+        CubePrimitiveMesh lightMesh(.1f);
+        pointLightShader = std::make_shared<Shader>();
+        pointLightShader->AttachShader("drawing.vert");
+        pointLightShader->AttachShader("light.frag");
+        pointLightShader->Link();
+        pointLightShader->ConnectUniforms({ "lightColor" });
 
-        if (!error.empty()) {
-            ImGui::Begin("Error");
-            ImGui::Text("%s", error.c_str());
-            ImGui::End();
-            return;
+        pointLightDrawable = std::make_unique<Drawable>(lightMesh, pointLightShader);
+
+        FileMesh monkeyMesh("suzanne.obj");
+        for (const Material& mat : monkeyMats) {
+            auto shader = std::make_shared<Shader>();
+            shader->AttachShader("drawing.vert");
+            shader->AttachShader("solid-colour.frag");
+            shader->Link();
+            shader->ConnectUniforms({ 
+                "material.ambient", 
+                "material.diffuse", 
+                "material.specular", 
+                "material.shininess",
+                "light.position", 
+                "light.direction", 
+                "light.cutOff", 
+                "light.outerCutOff", 
+                "light.ambient", 
+                "light.diffuse", 
+                "light.specular", 
+                "light.constant", 
+                "light.linear", 
+                "light.quadratic", 
+            });
+            SetMat(*shader, mat);
+
+            auto drawable = std::make_unique<Drawable>(monkeyMesh, shader);
+
+            monkies.push_back(std::move(drawable));
+            monkeyShaders.push_back(shader);
         }
 
+
+        PlanePrimitiveMesh floorMesh(10.f);
+        floorShader = std::make_shared<Shader>();
+        floorShader->AttachShader("drawing.vert");
+        floorShader->AttachShader("textured.frag");
+        floorShader->Link();
+        floorShader->ConnectUniforms({ 
+            "material.specular", 
+            "material.shininess", 
+            "light.position", 
+            "light.direction", 
+            "light.cutOff", 
+            "light.outerCutOff", 
+            "light.ambient", 
+            "light.diffuse", 
+            "light.specular", 
+            "light.constant", 
+            "light.linear", 
+            "light.quadratic", 
+        });
+        floorShader->SetUniform("material.shininess", 32.f);
+        floorShader->InitTextures({
+            {
+                "brickwall.jpg",
+                "material.diffuse",
+                {
+                    {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
+                    {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE},
+                    {GL_TEXTURE_MIN_FILTER, GL_LINEAR},
+                    {GL_TEXTURE_MAG_FILTER, GL_LINEAR}
+                }
+            },
+            {
+                "brickwall_normal.jpg",
+                "material.normal",
+                {
+                    {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
+                    {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE},
+                    {GL_TEXTURE_MIN_FILTER, GL_LINEAR},
+                    {GL_TEXTURE_MAG_FILTER, GL_LINEAR}
+                }
+            },
+        });
+
+        floor = std::make_unique<Drawable>(floorMesh, floorShader);
+    }
+
+    void InitFramebuffer() {
+        // Setup framebuffer
+        glGenFramebuffers(1, &fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+        // create color attachment texture
+        glGenTextures(1, &renderTexture);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, renderTexture);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, framebufferSize.x, framebufferSize.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        // bind texture to framebuffer
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTexture, 0);
+
+        // Create a renderbuffer objct for depth and stencil attachment
+        glGenRenderbuffers(1, &rbo);
+        glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, framebufferSize.x, framebufferSize.y);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+        // now that we actually created the framebuffer and added all attachments we want to check if it is actually complete now
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+            throw std::runtime_error("Framebuffer is not ready!");
+        }
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+        screenShader = std::make_unique<Shader>();
+        screenShader->AttachShader("framebuffer-display.vert");
+        screenShader->AttachShader("framebuffer-display.frag");
+        screenShader->Link();
+        screenShader->ConnectUniforms({ 
+            "screenTexture", 
+            "time", 
+            "clipPos"
+        });
+        screenShader->SetUniform("screenTexture", 0);
+
+        float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
+            // positions   // texCoords
+            -1.0f,  1.0f,  0.0f, 1.0f,
+            -1.0f, -1.0f,  0.0f, 0.0f,
+             1.0f, -1.0f,  1.0f, 0.0f,
+
+            -1.0f,  1.0f,  0.0f, 1.0f,
+             1.0f, -1.0f,  1.0f, 0.0f,
+             1.0f,  1.0f,  1.0f, 1.0f
+        };
+        glGenVertexArrays(1, &quadVAO);
+        glGenBuffers(1, &quadVBO);
+        glBindVertexArray(quadVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+    }
+
+    void InitView() {
+        auto cameraPos = vec3(10.f, 10.f, 10.f);
+        cameraView = lookAt(
+            cameraPos,
+            vec3(0.f, 0.6f, 0.f),
+            vec3(0.f, 1.f, 0.f)
+        );
+        cameraProj = perspective(
+            radians(45.f), 
+            (float)framebufferSize.x / (float)framebufferSize.y, 
+            1.f, 
+            100.f
+        );
+    }
+
+    void UpdateScene(float time) {
         // Move light
-        auto lightMat = translate(
+        lightMat = translate(
             rotate(
                 mat4(1), 
                 time * radians(-20.f), vec3(0, 1, 0)), 
             lightStartPos
         );
         pointLightShader->SetUniform("lightColor", light.specular);
-        pointLightDrawable->Draw(lightMat, view, proj);
         light.position = vec3(lightMat[3]);
         light.direction = normalize(vec3(0) - light.position);
         light.cutOff = cos(radians(lightInnerCutoffDegrees));
         light.outerCutOff = cos(radians(lightInnerCutoffDegrees + lightEdgeRadiusDegrees));
 
-        // Draw monkeys
         for (auto shader : monkeyShaders) {
             SetLight(*shader, light);
         }
+
+        SetLight(*floorShader, light);
+    }
+
+    void DrawFirstPass(mat4 view, mat4 proj, float time, std::shared_ptr<Shader> overrideShader = nullptr) {
+        pointLightDrawable->Draw(lightMat, view, proj, overrideShader);
+        // Draw monkeys
         for (size_t i = 0; i < monkies.size(); ++i) {
             const int rowSize = 3;
             const float spacing = 2.5f;
@@ -189,12 +353,11 @@ struct Graphics::CheshireCat {
                 vec3(0.f, 1.f, 0.f)
             );
 
-            monkies[i]->Draw(monkeyModelMat, view, proj);
+            monkies[i]->Draw(monkeyModelMat, view, proj, overrideShader);
         }
         
         // Draw floor
-        SetLight(*floorShader, light);
-        floor->Draw(mat4(1), view, proj);
+        floor->Draw(mat4(1), view, proj, overrideShader);
     }
 
     void DrawGUI(float deltaTime) {
@@ -267,190 +430,53 @@ Graphics::~Graphics() {
 
 void Graphics::Init(ivec2 framebufferSize) {
     try {
+        cc->framebufferSize = framebufferSize;
+
         glEnable(GL_CULL_FACE);
 
-        CubePrimitiveMesh lightMesh(.1f);
-        cc->pointLightShader = std::make_shared<Shader>();
-        cc->pointLightShader->AttachShader("drawing.vert");
-        cc->pointLightShader->AttachShader("light.frag");
-        cc->pointLightShader->Link();
-        cc->pointLightShader->ConnectUniforms({ "lightColor" });
+        cc->InitScene();
 
-        cc->pointLightDrawable = std::make_unique<Drawable>(lightMesh, cc->pointLightShader);
+        // Setup depth map
+        glGenFramebuffers(1, &cc->depthMapFBO);
 
-        FileMesh monkeyMesh("suzanne.obj");
-        for (const Material& mat : monkeyMats) {
-            auto shader = std::make_shared<Shader>();
-            shader->AttachShader("drawing.vert");
-            shader->AttachShader("solid-colour.frag");
-            shader->Link();
-            shader->ConnectUniforms({ 
-                "material.ambient", 
-                "material.diffuse", 
-                "material.specular", 
-                "material.shininess",
-                "light.position", 
-                "light.direction", 
-                "light.cutOff", 
-                "light.outerCutOff", 
-                "light.ambient", 
-                "light.diffuse", 
-                "light.specular", 
-                "light.constant", 
-                "light.linear", 
-                "light.quadratic", 
-            });
-            SetMat(*shader, mat);
+        glGenTextures(1, &cc->depthMap);
+        glBindTexture(GL_TEXTURE_2D, cc->depthMap);
+        glTexImage2D(
+            GL_TEXTURE_2D, 
+            0, 
+            GL_DEPTH_COMPONENT, 
+            SHADOW_WIDTH, 
+            SHADOW_HEIGHT, 
+            0, 
+            GL_DEPTH_COMPONENT, 
+            GL_FLOAT, 
+            NULL
+        );
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-            auto drawable = std::make_unique<Drawable>(monkeyMesh, shader);
-
-            cc->monkies.push_back(std::move(drawable));
-            cc->monkeyShaders.push_back(shader);
-        }
-
-
-        PlanePrimitiveMesh floorMesh(10.f);
-        cc->floorShader = std::make_shared<Shader>();
-        cc->floorShader->AttachShader("drawing.vert");
-        cc->floorShader->AttachShader("textured.frag");
-        cc->floorShader->Link();
-        cc->floorShader->ConnectUniforms({ 
-            "material.specular", 
-            "material.shininess", 
-            "light.position", 
-            "light.direction", 
-            "light.cutOff", 
-            "light.outerCutOff", 
-            "light.ambient", 
-            "light.diffuse", 
-            "light.specular", 
-            "light.constant", 
-            "light.linear", 
-            "light.quadratic", 
-        });
-        cc->floorShader->SetUniform("material.shininess", 32.f);
-        cc->floorShader->InitTextures({
-            {
-                "brickwall.jpg",
-                "material.diffuse",
-                {
-                    {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
-                    {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE},
-                    {GL_TEXTURE_MIN_FILTER, GL_LINEAR},
-                    {GL_TEXTURE_MAG_FILTER, GL_LINEAR}
-                }
-            },
-            //{
-            //    "container2_specular.png",
-            //    "material.specular",
-            //    {
-            //        {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
-            //        {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE},
-            //        {GL_TEXTURE_MIN_FILTER, GL_LINEAR},
-            //        {GL_TEXTURE_MAG_FILTER, GL_LINEAR}
-            //    }
-            //},
-            {
-                "brickwall_normal.jpg",
-                "material.normal",
-                {
-                    {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
-                    {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE},
-                    {GL_TEXTURE_MIN_FILTER, GL_LINEAR},
-                    {GL_TEXTURE_MAG_FILTER, GL_LINEAR}
-                }
-            },
-            //{
-            //    "matrix.jpg",
-            //    "material.emission",
-            //    {
-            //        {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
-            //        {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE},
-            //        {GL_TEXTURE_MIN_FILTER, GL_LINEAR},
-            //        {GL_TEXTURE_MAG_FILTER, GL_LINEAR}
-            //    }
-            //}
-        });
-
-        cc->floor = std::make_unique<Drawable>(floorMesh, cc->floorShader);
-
-
-
-        // Setup framebuffer
-        glGenFramebuffers(1, &cc->fbo);
-        glBindFramebuffer(GL_FRAMEBUFFER, cc->fbo);
-
-        // create color attachment texture
-        glGenTextures(1, &cc->renderTexture);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, cc->renderTexture);
-
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, framebufferSize.x, framebufferSize.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        // bind texture to framebuffer
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, cc->renderTexture, 0);
-
-        // Create a renderbuffer objct for depth and stencil attachment
-        glGenRenderbuffers(1, &cc->rbo);
-        glBindRenderbuffer(GL_RENDERBUFFER, cc->rbo);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, framebufferSize.x, framebufferSize.y);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, cc->rbo);
-        // now that we actually created the framebuffer and added all attachments we want to check if it is actually complete now
-        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-            throw std::runtime_error("Framebuffer is not ready!");
-        }
+        glBindFramebuffer(GL_FRAMEBUFFER, cc->depthMapFBO);
+        glFramebufferTexture2D(
+            GL_FRAMEBUFFER, 
+            GL_DEPTH_ATTACHMENT, 
+            GL_TEXTURE_2D, 
+            cc->depthMap, 
+            0
+        );
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+        cc->depthShader = std::make_shared<Shader>();
+        cc->depthShader->AttachShader("depth.vert");
+        cc->depthShader->AttachShader("depth.frag");
+        cc->depthShader->Link();
 
-        cc->screenShader = std::make_unique<Shader>();
-        cc->screenShader->AttachShader("framebuffer-display.vert");
-        cc->screenShader->AttachShader("framebuffer-display.frag");
-        //cc->screenShader->AttachShader("wave-postprocess.frag");
-        //cc->screenShader->AttachShader("edge-detect-postprocess.frag");
-        //cc->screenShader->AttachShader("blur-postprocess.frag");
-        cc->screenShader->Link();
-        cc->screenShader->ConnectUniforms({ 
-            "screenTexture", 
-            "time", 
-            "clipPos"
-        });
-        cc->screenShader->SetUniform("screenTexture", 0);
+        cc->InitFramebuffer();
 
-        float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
-            // positions   // texCoords
-            -1.0f,  1.0f,  0.0f, 1.0f,
-            -1.0f, -1.0f,  0.0f, 0.0f,
-             1.0f, -1.0f,  1.0f, 0.0f,
-
-            -1.0f,  1.0f,  0.0f, 1.0f,
-             1.0f, -1.0f,  1.0f, 0.0f,
-             1.0f,  1.0f,  1.0f, 1.0f
-        };
-        glGenVertexArrays(1, &cc->quadVAO);
-        glGenBuffers(1, &cc->quadVBO);
-        glBindVertexArray(cc->quadVAO);
-        glBindBuffer(GL_ARRAY_BUFFER, cc->quadVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-
-        auto cameraPos = vec3(10.f, 10.f, 10.f);
-        cc->view = lookAt(
-            cameraPos,
-            vec3(0.f, 0.6f, 0.f),
-            vec3(0.f, 1.f, 0.f)
-        );
-        cc->proj = perspective(
-            radians(45.f), 
-            (float)framebufferSize.x / (float)framebufferSize.y, 
-            1.f, 
-            100.f
-        );
+        cc->InitView();
 
         // Done!
         cc->timer->Start();
@@ -462,7 +488,8 @@ void Graphics::Init(ivec2 framebufferSize) {
 }
 
 void Graphics::OnResize(ivec2 framebufferSize) {
-    cc->proj = perspective(
+    cc->framebufferSize = framebufferSize;
+    cc->cameraProj = perspective(
         radians(45.f), 
         (float)framebufferSize.x / (float)framebufferSize.y, 
         1.f, 
@@ -481,14 +508,40 @@ void Graphics::OnResize(ivec2 framebufferSize) {
 }
 
 void Graphics::Draw() {
+    if (!cc->error.empty()) {
+        ImGui::Begin("Error");
+        ImGui::Text("%s", cc->error.c_str());
+        ImGui::End();
+    }
+
     cc->timer->Update();
     auto deltaTime = cc->timer->GetDelta();
     auto time = cc->timer->GetTime();
 
-    // first pass
-    glBindFramebuffer(GL_FRAMEBUFFER, cc->fbo);
+    cc->UpdateScene(time);
+
     glEnable(GL_DEPTH_TEST);
-    cc->DrawFirstPass(deltaTime, time);
+    // depth pass
+    glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+    glBindFramebuffer(GL_FRAMEBUFFER, cc->depthMapFBO);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    auto lightMat = lookAt(cc->light.position, cc->light.direction, vec3(0.f, 1.f, 0.f));
+    auto lightPerspective = perspective(
+        radians(cc->lightInnerCutoffDegrees + cc->lightEdgeRadiusDegrees),
+        (float)SHADOW_WIDTH / (float)SHADOW_HEIGHT,
+        1.f,
+        10.f
+    );
+    cc->DrawFirstPass(lightMat, lightPerspective, time, cc->depthShader);
+    // ConfigureShaderAndMatrices
+
+
+    // first pass
+    glViewport(0, 0, cc->framebufferSize.x, cc->framebufferSize.y);
+    glBindFramebuffer(GL_FRAMEBUFFER, cc->fbo);
+    glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    cc->DrawFirstPass(cc->cameraView, cc->cameraProj, time);
 
     // second pass
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -498,9 +551,14 @@ void Graphics::Draw() {
 
     cc->screenShader->Activate();
     cc->screenShader->SetUniform("time", time);
+    cc->screenShader->SetUniform("clipPos", vec4(0.f, 0.f, 1.f, 1.f));
     glBindVertexArray(cc->quadVAO);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, cc->renderTexture);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    cc->screenShader->SetUniform("clipPos", vec4(0.5f, 0.5f, 0.2f, 0.2f));
+    glBindTexture(GL_TEXTURE_2D, cc->depthMap);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
 
