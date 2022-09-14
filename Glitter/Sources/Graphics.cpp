@@ -526,13 +526,14 @@ void Graphics::Draw() {
     glBindFramebuffer(GL_FRAMEBUFFER, cc->depthMapFBO);
     glClear(GL_DEPTH_BUFFER_BIT);
     auto lightMat = lookAt(cc->light.position, cc->light.direction, vec3(0.f, 1.f, 0.f));
-    auto lightPerspective = perspective(
-        radians(cc->lightInnerCutoffDegrees + cc->lightEdgeRadiusDegrees),
-        (float)SHADOW_WIDTH / (float)SHADOW_HEIGHT,
-        1.f,
-        10.f
-    );
-    cc->DrawFirstPass(lightMat, lightPerspective, time, cc->depthShader);
+    //auto lightPerspective = perspective(
+    //    radians(cc->lightInnerCutoffDegrees + cc->lightEdgeRadiusDegrees),
+    //    (float)SHADOW_WIDTH / (float)SHADOW_HEIGHT,
+    //    1.f,
+    //    10.f
+    //);
+    auto lightProjection = ortho(-8.f, 8.f, -8.f, 8.f, 0.5f, 7.5f);
+    cc->DrawFirstPass(lightMat, lightProjection, time, cc->depthShader);
     // ConfigureShaderAndMatrices
 
 
