@@ -25,7 +25,7 @@ Drawable::Drawable(const Mesh& mesh, const std::shared_ptr<Shader> shader)
 
     glGenBuffers(1, &ebo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.GetIndiciesSize(), mesh.GetIndices(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.GetIndicesSize(), mesh.GetIndices(), GL_STATIC_DRAW);
 
     shaderProgram->Activate();
 

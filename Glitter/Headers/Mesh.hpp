@@ -20,7 +20,7 @@ public:
     virtual size_t GetVertexDataSize() const = 0;
 
     virtual const void* GetIndices() const = 0;
-    virtual size_t GetIndiciesSize() const = 0;
+    virtual size_t GetIndicesSize() const = 0;
 
     virtual const VertexAttribInfoList& GetVertexAttribs() const = 0;
 };

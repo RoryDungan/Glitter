@@ -17,7 +17,7 @@ public:
     const void* GetIndices() const {
         return indices.data();
     }
-    size_t GetIndiciesSize() const {
+    size_t GetIndicesSize() const {
         return sizeof(unsigned int) * indices.size();
     }
 
