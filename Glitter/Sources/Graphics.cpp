@@ -52,57 +52,57 @@ static void SetLight(Shader& shader, const Light& light) {
 
 std::vector<Material> monkeyMats = {
     {   // Emerald
-        vec3(0.0215, 0.1745, 0.0215),
-        vec3(0.07568, 0.61424, 0.07568),
-        vec3(0.633, 0.727811, 0.633),
+        vec3(0.0215f, 0.1745f, 0.0215f),
+        vec3(0.07568f, 0.61424f, 0.07568f),
+        vec3(0.633f, 0.727811f, 0.633f),
         0.6f
     },
     {   // Jade
-        vec3(0.135, 0.2225, 0.0215),
-        vec3(0.54, 0.89, 0.63),
-        vec3(0.316228),
+        vec3(0.135f, 0.2225f, 0.0215f),
+        vec3(0.54f, 0.89f, 0.63f),
+        vec3(0.316228f),
         0.1f
     },
     {   // Obsidian
-        vec3(0.05375, 0.05, 0.06625),
-        vec3(0.18275, 0.17, 0.22525),
-        vec3(0.332741, 0.328634, 0.346435),
+        vec3(0.05375f, 0.05f, 0.06625f),
+        vec3(0.18275f, 0.17f, 0.22525f),
+        vec3(0.332741f, 0.328634f, 0.346435f),
         0.3f
     },
     {   // Pearl
-        vec3(0.25, 0.20725, 0.20725),
-        vec3(1, 0.829, 0.829),
-        vec3(0.296648),
+        vec3(0.25f, 0.20725f, 0.20725f),
+        vec3(1.f, 0.829f, 0.829f),
+        vec3(0.296648f),
         0.088f
     },
     {   // Ruby
-        vec3(0.1745, 0.01175, 0.01175),
-        vec3(0.61424, 0.04136, 0.04136),
-        vec3(0.727811, 0.626959, 0.626959),
+        vec3(0.1745f, 0.01175f, 0.01175f),
+        vec3(0.61424f, 0.04136f, 0.04136f),
+        vec3(0.727811f, 0.626959f, 0.626959f),
         0.06f
     },
     {   // Green plastic
-        vec3(0),
-        vec3(0.1, 0.35, 0.1),
-        vec3(0.45, 0.55, 0.45),
+        vec3(0.f),
+        vec3(0.1f, 0.35f, 0.1f),
+        vec3(0.45f, 0.55f, 0.45f),
         0.25f
     },
     {   // White plastic
-        vec3(0),
-        vec3(0.55),
-        vec3(0.70),
+        vec3(0.f),
+        vec3(0.55f),
+        vec3(0.70f),
         0.25f
     },
     {   // Cyan rubber
-        vec3(0, 0.05, 0.05),
-        vec3(0.4, 0.5, 0.5),
-        vec3(0.04, 0.7, 0.7),
+        vec3(0.f, 0.05f, 0.05),
+        vec3(0.4f, 0.5f, 0.5),
+        vec3(0.04f, 0.7f, 0.7f),
         0.078125f
     },
     {   // Yellow rubber
-        vec3(0.05, 0.05, 0.00),
-        vec3(0.5, 0.5, 0.4),
-        vec3(0.7, 0.7, 0.04),
+        vec3(0.05f, 0.05f, 0.00f),
+        vec3(0.5f, 0.5f, 0.4f),
+        vec3(0.7f, 0.7f, 0.04f),
         0.078125f
     },
 };
@@ -119,25 +119,26 @@ struct Graphics::CheshireCat {
     std::vector<std::shared_ptr<Shader>> monkeyShaders;
     std::shared_ptr<Shader> floorShader;
 
-    glm::mat4 view, proj;
+    mat4 view = mat4(), proj = mat4();
 
 
-    glm::vec3 lightStartPos = vec3(2.2f, 4.f, 2.f);
+    vec3 lightStartPos = vec3(2.2f, 4.f, 2.f);
     float lightInnerCutoffDegrees = 50.f;
     float lightEdgeRadiusDegrees = 5.f;
     Light light = {
         lightStartPos,
-        normalize(vec3(0) - lightStartPos), // look towards the center of the scene
+        normalize(vec3(0.f) - lightStartPos), // look towards the center of the scene
         cos(radians(lightInnerCutoffDegrees)),
         cos(radians(lightInnerCutoffDegrees + lightEdgeRadiusDegrees)),
 
-        vec3(0.2),
-        vec3(1),
-        vec3(1),
+        vec3(0.2f),
+        vec3(1.f),
+        vec3(1.f),
 
         //1, 0.09, 0.032 // distance 50
-        1, 0.027, 0.0028 // distance 160
+        1.f, 0.027f, 0.0028f // distance 160
     };
+    GLuint depthMapFBO = 0;
 
     GLuint fbo = 0, rbo = 0, quadVAO = 0, quadVBO = 0;
     GLuint renderTexture = 0;
