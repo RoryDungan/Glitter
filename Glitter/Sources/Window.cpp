@@ -64,7 +64,7 @@ glm::ivec2 Window::GetFramebufferSize() const {
 
 void Window::OnResize(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
-    graphics->UpdateAspect(glm::ivec2(width, height));
+    graphics->OnResize(glm::ivec2(width, height));
     Draw();
 }
 

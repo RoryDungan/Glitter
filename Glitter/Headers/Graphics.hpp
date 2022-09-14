@@ -7,10 +7,10 @@ class Graphics {
 public:
     Graphics(); 
     ~Graphics(); 
-    void Init(glm::ivec2 windowSize);
+    void Init(glm::ivec2 framebufferSize);
     void Draw();
 
-    void UpdateAspect(glm::ivec2 windowSize);
+    void OnResize(glm::ivec2 framebufferSize);
 
 private:
     struct CheshireCat;

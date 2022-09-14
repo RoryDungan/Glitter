@@ -264,7 +264,7 @@ Graphics::~Graphics() {
     }
 }
 
-void Graphics::Init(ivec2 windowSize) {
+void Graphics::Init(ivec2 framebufferSize) {
     try {
         glEnable(GL_CULL_FACE);
 
@@ -373,14 +373,6 @@ void Graphics::Init(ivec2 windowSize) {
 
         cc->floor = std::make_unique<Drawable>(floorMesh, cc->floorShader);
 
-        auto cameraPos = vec3(10.f, 10.f, 10.f);
-        cc->view = lookAt(
-            cameraPos,
-            vec3(0.f, 0.6f, 0.f),
-            vec3(0.f, 1.f, 0.f)
-        );
-        UpdateAspect(windowSize);
-
 
 
         // Setup framebuffer
@@ -392,7 +384,7 @@ void Graphics::Init(ivec2 windowSize) {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, cc->renderTexture);
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, windowSize.x, windowSize.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, framebufferSize.x, framebufferSize.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -403,7 +395,7 @@ void Graphics::Init(ivec2 windowSize) {
         // Create a renderbuffer objct for depth and stencil attachment
         glGenRenderbuffers(1, &cc->rbo);
         glBindRenderbuffer(GL_RENDERBUFFER, cc->rbo);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, windowSize.x, windowSize.y);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, framebufferSize.x, framebufferSize.y);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, cc->rbo);
         // now that we actually created the framebuffer and added all attachments we want to check if it is actually complete now
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
@@ -446,9 +438,15 @@ void Graphics::Init(ivec2 windowSize) {
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
+        auto cameraPos = vec3(10.f, 10.f, 10.f);
+        cc->view = lookAt(
+            cameraPos,
+            vec3(0.f, 0.6f, 0.f),
+            vec3(0.f, 1.f, 0.f)
+        );
         cc->proj = perspective(
             radians(45.f), 
-            (float)windowSize.x / (float)windowSize.y, 
+            (float)framebufferSize.x / (float)framebufferSize.y, 
             1.f, 
             100.f
         );
@@ -462,22 +460,22 @@ void Graphics::Init(ivec2 windowSize) {
     }
 }
 
-void Graphics::UpdateAspect(ivec2 windowSize) {
+void Graphics::OnResize(ivec2 framebufferSize) {
     cc->proj = perspective(
         radians(45.f), 
-        (float)windowSize.x / (float)windowSize.y, 
+        (float)framebufferSize.x / (float)framebufferSize.y, 
         1.f, 
         100.f
     );
 
     // resize renderbuffer color attachment
     glBindTexture(GL_TEXTURE_2D, cc->renderTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, windowSize.x, windowSize.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, framebufferSize.x, framebufferSize.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // resize depth attachment
     glBindRenderbuffer(GL_RENDERBUFFER, cc->rbo);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, windowSize.x, windowSize.y);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, framebufferSize.x, framebufferSize.y);
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 }
 
