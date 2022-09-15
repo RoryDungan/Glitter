@@ -53,6 +53,8 @@ static void SetLight(Shader& shader, const Light& light, const mat4& lightSpaceM
 
 static const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
 
+static const float kCameraDistance = 5.f;
+
 std::vector<Material> monkeyMats = {
     {   // Emerald
         vec3(0.0215f, 0.1745f, 0.0215f),
@@ -165,36 +167,94 @@ struct Graphics::CheshireCat {
 
         pointLightDrawable = std::make_unique<Drawable>(lightMesh, pointLightShader);
 
-        FileMesh monkeyMesh("suzanne.obj");
-        for (const Material& mat : monkeyMats) {
-            auto shader = std::make_shared<Shader>();
-            shader->AttachShader("drawing.vert");
-            shader->AttachShader("solid-colour.frag");
-            shader->Link();
-            shader->ConnectUniforms({ 
-                "material.ambient", 
-                "material.diffuse", 
-                "material.specular", 
-                "material.shininess",
-                "light.position", 
-                "light.direction", 
-                "light.cutOff", 
-                "light.outerCutOff", 
-                "light.ambient", 
-                "light.diffuse", 
-                "light.specular", 
-                "light.constant", 
-                "light.linear", 
-                "light.quadratic", 
-                "lightSpaceMatrix",
-            });
-            SetMat(*shader, mat);
+        //FileMesh monkeyMesh("suzanne.obj");
+        //for (const Material& mat : monkeyMats) {
+        //    auto shader = std::make_shared<Shader>();
+        //    shader->AttachShader("drawing.vert");
+        //    shader->AttachShader("solid-colour.frag");
+        //    shader->Link();
+        //    shader->ConnectUniforms({ 
+        //        "material.ambient", 
+        //        "material.diffuse", 
+        //        "material.specular", 
+        //        "material.shininess",
+        //        "light.position", 
+        //        "light.direction", 
+        //        "light.cutOff", 
+        //        "light.outerCutOff", 
+        //        "light.ambient", 
+        //        "light.diffuse", 
+        //        "light.specular", 
+        //        "light.constant", 
+        //        "light.linear", 
+        //        "light.quadratic", 
+        //        "lightSpaceMatrix",
+        //    });
+        //    SetMat(*shader, mat);
 
-            auto drawable = std::make_unique<Drawable>(monkeyMesh, shader);
+        //    auto drawable = std::make_unique<Drawable>(monkeyMesh, shader);
 
-            monkies.push_back(std::move(drawable));
-            monkeyShaders.push_back(shader);
-        }
+        //    monkies.push_back(std::move(drawable));
+        //    monkeyShaders.push_back(shader);
+        //}
+        auto shader = std::make_shared<Shader>();
+        shader->AttachShader("drawing.vert");
+        shader->AttachShader("textured.frag");
+        shader->Link();
+        shader->ConnectUniforms({ 
+            "material.specular", 
+            "material.shininess", 
+            "light.position", 
+            "light.direction", 
+            "light.cutOff", 
+            "light.outerCutOff", 
+            "light.ambient", 
+            "light.diffuse", 
+            "light.specular", 
+            "light.constant", 
+            "light.linear", 
+            "light.quadratic", 
+            "lightSpaceMatrix",
+        });
+        shader->SetUniform("material.shininess", 32.f);
+        shader->InitTextures({
+            {
+                "container2.png",
+                "material.diffuse",
+                {
+                    {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
+                    {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE},
+                    {GL_TEXTURE_MIN_FILTER, GL_LINEAR},
+                    {GL_TEXTURE_MAG_FILTER, GL_LINEAR}
+                }
+            },
+            {
+                "container2_specular.png",
+                "material.specular",
+                {
+                    {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
+                    {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE},
+                    {GL_TEXTURE_MIN_FILTER, GL_LINEAR},
+                    {GL_TEXTURE_MAG_FILTER, GL_LINEAR}
+                }
+            },
+            {
+                "blue.png",
+                "material.normal",
+                {
+                    {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
+                    {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE},
+                    {GL_TEXTURE_MIN_FILTER, GL_LINEAR},
+                    {GL_TEXTURE_MAG_FILTER, GL_LINEAR}
+                }
+            },
+        });
+        shader->ConnectDepthTex(depthMap);
+
+        CubePrimitiveMesh mesh(2.f);
+        auto drawable = std::make_unique<Drawable>(mesh, shader);
+        monkies.push_back(std::move(drawable));
+        monkeyShaders.push_back(shader);
 
 
         PlanePrimitiveMesh floorMesh(10.f);
@@ -308,7 +368,7 @@ struct Graphics::CheshireCat {
     }
 
     void InitView() {
-        auto cameraPos = vec3(10.f, 10.f, 10.f);
+        auto cameraPos = vec3(kCameraDistance);
         cameraView = lookAt(
             cameraPos,
             vec3(0.f, 0.6f, 0.f),
@@ -351,11 +411,12 @@ struct Graphics::CheshireCat {
             const float spacing = 2.5f;
             auto monkeyPos = vec3(i / rowSize * spacing, 0.9f, i % rowSize * spacing) - vec3(2.5, 0, 2.5);
 
-            auto monkeyModelMat = rotate(
-                translate(mat4(1.f), monkeyPos),
-                time * radians(10.f),
-                vec3(0.f, 1.f, 0.f)
-            );
+            //auto monkeyModelMat = rotate(
+            //    translate(mat4(1.f), monkeyPos),
+            //    time * radians(10.f),
+            //    vec3(0.f, 1.f, 0.f)
+            //);
+            auto monkeyModelMat = translate(mat4(1.f), vec3(0.f, 1.0f, 0.f));
 
             monkies[i]->Draw(monkeyModelMat, view, proj, overrideShader);
         }
@@ -522,6 +583,16 @@ void Graphics::Draw() {
     auto deltaTime = cc->timer->GetDelta();
     auto time = cc->timer->GetTime();
 
+    auto lightView = lookAt(cc->light.position, cc->light.direction, vec3(0.f, 1.f, 0.f));
+    auto lightProjection = perspective(
+        radians(cc->lightInnerCutoffDegrees + cc->lightEdgeRadiusDegrees) * 2.f,
+        (float)SHADOW_WIDTH / (float)SHADOW_HEIGHT,
+        1.f,
+        10.f
+    );
+    //auto lightProjection = ortho(-8.f, 8.f, -8.f, 8.f, 0.5f, 10.f);
+    cc->lightSpaceMatrix = lightProjection * lightView;
+
     cc->UpdateScene(time);
 
     glEnable(GL_DEPTH_TEST);
@@ -529,15 +600,6 @@ void Graphics::Draw() {
     glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
     glBindFramebuffer(GL_FRAMEBUFFER, cc->depthMapFBO);
     glClear(GL_DEPTH_BUFFER_BIT);
-    auto lightView = lookAt(cc->light.position, cc->light.direction, vec3(0.f, 1.f, 0.f));
-    //auto lightPerspective = perspective(
-    //    radians(cc->lightInnerCutoffDegrees + cc->lightEdgeRadiusDegrees),
-    //    (float)SHADOW_WIDTH / (float)SHADOW_HEIGHT,
-    //    1.f,
-    //    10.f
-    //);
-    auto lightProjection = ortho(-8.f, 8.f, -8.f, 8.f, 0.5f, 10.f);
-    cc->lightSpaceMatrix = lightProjection * lightView;
     cc->DrawFirstPass(lightView, lightProjection, time, cc->depthShader);
     // ConfigureShaderAndMatrices
 
