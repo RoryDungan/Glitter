@@ -37,7 +37,7 @@ static void SetMat(Shader& shader, const Material& mat) {
     shader.SetUniform("material.shininess", mat.shininess);
 }
 
-static void SetLight(Shader& shader, const Light& light, const mat4& lightSpaceMatrix) {
+static void SetLight(Shader& shader, const Light& light, const mat4& lightSpaceMatrix, float penumbraSize) {
     shader.SetUniform("light.position", light.position);
     shader.SetUniform("light.direction", light.direction);
     shader.SetUniform("light.cutOff", light.cutOff);
@@ -49,6 +49,7 @@ static void SetLight(Shader& shader, const Light& light, const mat4& lightSpaceM
     shader.SetUniform("light.linear", light.linear);
     shader.SetUniform("light.quadratic", light.quadratic);
     shader.SetUniform("lightSpaceMatrix", lightSpaceMatrix);
+    shader.SetUniform("penumbraSize", penumbraSize);
 }
 
 static const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
@@ -129,8 +130,8 @@ struct Graphics::CheshireCat {
     ivec2 framebufferSize;
 
     vec3 lightStartPos = vec3(2.2f, 4.f, 2.f);
-    float lightInnerCutoffDegrees = 50.f;
-    float lightEdgeRadiusDegrees = 5.f;
+    float lightInnerCutoffDegrees = 35.f;
+    float lightEdgeRadiusDegrees = 12.f;
     Light light = {
         lightStartPos,
         normalize(vec3(0.f) - lightStartPos), // look towards the center of the scene
@@ -148,6 +149,7 @@ struct Graphics::CheshireCat {
 
     GLuint depthMapFBO = 0, depthMap;
     std::shared_ptr<Shader> depthShader;
+    float penumbraSize = 500.f;
 
     GLuint fbo = 0, rbo = 0, quadVAO = 0, quadVBO = 0;
     GLuint renderTexture = 0;
@@ -215,6 +217,7 @@ struct Graphics::CheshireCat {
             "light.linear", 
             "light.quadratic", 
             "lightSpaceMatrix",
+            "penumbraSize",
         });
         shader->SetUniform("material.shininess", 32.f);
         shader->InitTextures({
@@ -257,7 +260,7 @@ struct Graphics::CheshireCat {
         monkeyShaders.push_back(shader);
 
 
-        PlanePrimitiveMesh floorMesh(10.f);
+        PlanePrimitiveMesh floorMesh(12.f);
         floorShader = std::make_shared<Shader>();
         floorShader->AttachShader("drawing.vert");
         floorShader->AttachShader("textured.frag");
@@ -276,6 +279,7 @@ struct Graphics::CheshireCat {
             "light.linear", 
             "light.quadratic", 
             "lightSpaceMatrix",
+            "penumbraSize",
         });
         floorShader->SetUniform("material.shininess", 32.f);
         floorShader->InitTextures({
@@ -397,10 +401,10 @@ struct Graphics::CheshireCat {
         light.outerCutOff = cos(radians(lightInnerCutoffDegrees + lightEdgeRadiusDegrees));
 
         for (auto shader : monkeyShaders) {
-            SetLight(*shader, light, lightSpaceMatrix);
+            SetLight(*shader, light, lightSpaceMatrix, penumbraSize);
         }
 
-        SetLight(*floorShader, light, lightSpaceMatrix);
+        SetLight(*floorShader, light, lightSpaceMatrix, penumbraSize);
     }
 
     void DrawFirstPass(mat4 view, mat4 proj, float time, std::shared_ptr<Shader> overrideShader = nullptr) {
@@ -471,6 +475,11 @@ struct Graphics::CheshireCat {
         if (ImGui::TreeNode("Cutoff")) {
             ImGui::SliderFloat("Radius", &lightInnerCutoffDegrees, 0.f, 180.f, "%.2f°");
             ImGui::SliderFloat("Edge size", &lightEdgeRadiusDegrees, 0.f, 180.f, "%.2f°");
+            ImGui::TreePop();
+        }
+
+        if (ImGui::TreeNode("Shadow")) {
+            ImGui::SliderFloat("Penumbra size", &penumbraSize, 1.f, 1000.f, "%.2f");
             ImGui::TreePop();
         }
 

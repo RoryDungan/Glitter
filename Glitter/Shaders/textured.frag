@@ -36,21 +36,37 @@ uniform Material material;
 uniform Light light;
 
 uniform sampler2D shadowMap;
+uniform float penumbraSize = 100;
 
 uniform vec3 worldSpaceCameraPos;
 
-const float shadowBias = 0.005;
+const float minShadowBias = 0.003;
+const float maxShadowBias = 0.03;
 
-float ShadowCalculation(vec4 fragPosLightSpace) {
+float ShadowCalculation(vec4 fragPosLightSpace, float normalToLightAngle) {
     // perform perspective divide
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     // transform NDC (-1..1) coords to 0..1
     projCoords = projCoords * 0.5 + 0.5;
 
-    float closestDepth = texture(shadowMap, projCoords.xy).r;
+    float bias = max(maxShadowBias * (1.0 - normalToLightAngle), minShadowBias);
+
     float currentDepth = projCoords.z;
 
-    return currentDepth - shadowBias > closestDepth ? 1.0 : 0.0;
+    // Simple method
+//    float closestDepth = texture(shadowMap, projCoords.xy).r;
+//    return currentDepth - bias > closestDepth ? 1.0 : 0.0;
+
+    // Soft edges with multiple samples
+    float shadow = 0.0;
+    float texelSize = 1.0 / penumbraSize;
+    for (int x = -2; x <= 2; ++x) {
+        for (int y = -2; y <= 2; ++y) {
+            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x,y) * texelSize).r;
+            shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
+        }
+    }
+    return shadow / 25.0;
 }
 
 void main() {
@@ -87,13 +103,12 @@ void main() {
     // Emission
     vec3 emission = texture(material.emission, fs_in.Texcoord).rgb;
 
-    float shadow = ShadowCalculation(fs_in.FragPosLightSpace);
+    float shadow = ShadowCalculation(fs_in.FragPosLightSpace, diff);
 
     // final light
     vec3 result = ambient * attenuation + 
         ((1.0 - shadow) *
-            diffuse * attenuation * intensity + 
-            specular * attenuation * intensity
+            (diffuse * attenuation * intensity + specular * attenuation * intensity)
         );// + emission;
     outColor = vec4(result, 1);
 }
