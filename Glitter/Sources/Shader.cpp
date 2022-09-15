@@ -1,9 +1,11 @@
 #include <fstream>
 #include <sstream>
+#define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 #include "Mesh.hpp"
 #include "Shader.hpp"
+
 
 struct VertexAttribPointerSettings {
     GLint attrib;
@@ -155,6 +157,20 @@ void Shader::SetUniform(const std::string& name, const glm::vec4& value) {
     }
 }
 
+void Shader::SetUniform(const std::string& name, const glm::mat4& value) {
+    Activate();
+
+    auto uniformLocation = uniforms.find(name);
+    if (uniformLocation != uniforms.end()) {
+        glUniformMatrix4fv(uniformLocation->second, 1, GL_FALSE, value_ptr(value));
+    }
+    else {
+        std::ostringstream ss;
+        ss << "Could not find uniform " << name << " on material.";
+        throw std::runtime_error(ss.str());
+    }
+}
+
 void Shader::InitTextures(const std::vector<TexSettings>& textureSettings) {
     Activate();
 
@@ -190,6 +206,15 @@ void Shader::InitTextures(const std::vector<TexSettings>& textureSettings) {
             glTexParameteri(GL_TEXTURE_2D, param.first, param.second);
         }
     }
+}
+
+// TODO: refactor Texture out to its own class and make this work with the same 
+// system as the other textures.
+void Shader::ConnectDepthTex(GLuint texid) {
+    unsigned int texIndex = textures.size();
+    textures.push_back(texid);
+    auto shadowMapLoc = glGetUniformLocation(program, "shadowMap");
+    glUniform1i(shadowMapLoc, texIndex);
 }
 
 void Shader::BindTextures() {

@@ -41,8 +41,6 @@ Drawable::Drawable(const Mesh& mesh, const std::shared_ptr<Shader> shader)
         glGetUniformLocation(shaderProgram->Get(), "worldSpaceCameraPos");
     reverseLightDirectionLocation = 
         glGetUniformLocation(shaderProgram->Get(), "reverseLightDirection");
-    lightPosLocation = 
-        glGetUniformLocation(shaderProgram->Get(), "lightPos");
 
     auto lightDir = normalize(vec3(0.5, 0.7, 1));
     glUniform3fv(reverseLightDirectionLocation, 1, value_ptr(lightDir));

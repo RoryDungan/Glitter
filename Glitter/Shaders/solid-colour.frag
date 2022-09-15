@@ -27,6 +27,7 @@ in VS_OUT {
     vec3 FragPos;
     vec2 Texcoord;
     mat3 TBN;
+    vec4 FragPosLightSpace;
 } fs_in;
 
 out vec4 outColor;

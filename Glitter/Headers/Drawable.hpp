@@ -29,7 +29,6 @@ private:
     GLint modelInverseTransposeLocation = 0;
     GLint worldSpaceCameraPosLocation = 0; 
     GLint reverseLightDirectionLocation = 0;
-    GLint lightPosLocation = 0;
 
     GLuint vbo = 0, vao = 0, ebo = 0;
 

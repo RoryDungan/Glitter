@@ -27,6 +27,7 @@ in VS_OUT {
     vec3 FragPos;
     vec2 Texcoord;
     mat3 TBN;
+    vec4 FragPosLightSpace;
 } fs_in;
 
 out vec4 outColor;
@@ -34,11 +35,25 @@ out vec4 outColor;
 uniform Material material;
 uniform Light light;
 
+uniform sampler2D shadowMap;
+
 uniform vec3 worldSpaceCameraPos;
 
+const float shadowBias = 0.005;
 
-void main()
-{
+float ShadowCalculation(vec4 fragPosLightSpace) {
+    // perform perspective divide
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    // transform NDC (-1..1) coords to 0..1
+    projCoords = projCoords * 0.5 + 0.5;
+
+    float closestDepth = texture(shadowMap, projCoords.xy).r;
+    float currentDepth = projCoords.z;
+
+    return currentDepth - shadowBias > closestDepth ? 1.0 : 0.0;
+}
+
+void main() {
     vec3 normalMapSample = texture(material.normal, fs_in.Texcoord).rgb;
     normalMapSample = normalMapSample * 2.0 - 1; // Convert from 0..1 to -1..1
     vec3 normal = normalize(fs_in.TBN * normalMapSample); // transform from tangent to world space
@@ -70,12 +85,15 @@ void main()
     vec3 specular =  light.specular * spec * texture(material.specular, fs_in.Texcoord).rgb;
 
     // Emission
-    vec3 emission = vec3(0);//texture(material.emission, Texcoord).rgb;
+    vec3 emission = texture(material.emission, fs_in.Texcoord).rgb;
+
+    float shadow = ShadowCalculation(fs_in.FragPosLightSpace);
 
     // final light
     vec3 result = ambient * attenuation + 
-        diffuse * attenuation * intensity + 
-        specular * attenuation * intensity + 
-        emission;
+        ((1.0 - shadow) *
+            diffuse * attenuation * intensity + 
+            specular * attenuation * intensity
+        );// + emission;
     outColor = vec4(result, 1);
 }

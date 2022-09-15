@@ -37,7 +37,7 @@ static void SetMat(Shader& shader, const Material& mat) {
     shader.SetUniform("material.shininess", mat.shininess);
 }
 
-static void SetLight(Shader& shader, const Light& light) {
+static void SetLight(Shader& shader, const Light& light, const mat4& lightSpaceMatrix) {
     shader.SetUniform("light.position", light.position);
     shader.SetUniform("light.direction", light.direction);
     shader.SetUniform("light.cutOff", light.cutOff);
@@ -48,6 +48,7 @@ static void SetLight(Shader& shader, const Light& light) {
     shader.SetUniform("light.constant", light.constant);
     shader.SetUniform("light.linear", light.linear);
     shader.SetUniform("light.quadratic", light.quadratic);
+    shader.SetUniform("lightSpaceMatrix", lightSpaceMatrix);
 }
 
 static const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
@@ -141,7 +142,7 @@ struct Graphics::CheshireCat {
         //1, 0.09, 0.032 // distance 50
         1.f, 0.027f, 0.0028f // distance 160
     };
-    mat4 lightMat = mat4(1);
+    mat4 lightMat = mat4(1), lightSpaceMatrix = mat4(1);
 
     GLuint depthMapFBO = 0, depthMap;
     std::shared_ptr<Shader> depthShader;
@@ -185,6 +186,7 @@ struct Graphics::CheshireCat {
                 "light.constant", 
                 "light.linear", 
                 "light.quadratic", 
+                "lightSpaceMatrix",
             });
             SetMat(*shader, mat);
 
@@ -213,6 +215,7 @@ struct Graphics::CheshireCat {
             "light.constant", 
             "light.linear", 
             "light.quadratic", 
+            "lightSpaceMatrix",
         });
         floorShader->SetUniform("material.shininess", 32.f);
         floorShader->InitTextures({
@@ -237,6 +240,7 @@ struct Graphics::CheshireCat {
                 }
             },
         });
+        floorShader->ConnectDepthTex(depthMap);
 
         floor = std::make_unique<Drawable>(floorMesh, floorShader);
     }
@@ -333,10 +337,10 @@ struct Graphics::CheshireCat {
         light.outerCutOff = cos(radians(lightInnerCutoffDegrees + lightEdgeRadiusDegrees));
 
         for (auto shader : monkeyShaders) {
-            SetLight(*shader, light);
+            SetLight(*shader, light, lightSpaceMatrix);
         }
 
-        SetLight(*floorShader, light);
+        SetLight(*floorShader, light, lightSpaceMatrix);
     }
 
     void DrawFirstPass(mat4 view, mat4 proj, float time, std::shared_ptr<Shader> overrideShader = nullptr) {
@@ -434,8 +438,6 @@ void Graphics::Init(ivec2 framebufferSize) {
 
         glEnable(GL_CULL_FACE);
 
-        cc->InitScene();
-
         // Setup depth map
         glGenFramebuffers(1, &cc->depthMapFBO);
 
@@ -473,6 +475,8 @@ void Graphics::Init(ivec2 framebufferSize) {
         cc->depthShader->AttachShader("depth.vert");
         cc->depthShader->AttachShader("depth.frag");
         cc->depthShader->Link();
+
+        cc->InitScene();
 
         cc->InitFramebuffer();
 
@@ -525,15 +529,16 @@ void Graphics::Draw() {
     glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
     glBindFramebuffer(GL_FRAMEBUFFER, cc->depthMapFBO);
     glClear(GL_DEPTH_BUFFER_BIT);
-    auto lightMat = lookAt(cc->light.position, cc->light.direction, vec3(0.f, 1.f, 0.f));
+    auto lightView = lookAt(cc->light.position, cc->light.direction, vec3(0.f, 1.f, 0.f));
     //auto lightPerspective = perspective(
     //    radians(cc->lightInnerCutoffDegrees + cc->lightEdgeRadiusDegrees),
     //    (float)SHADOW_WIDTH / (float)SHADOW_HEIGHT,
     //    1.f,
     //    10.f
     //);
-    auto lightProjection = ortho(-8.f, 8.f, -8.f, 8.f, 0.5f, 7.5f);
-    cc->DrawFirstPass(lightMat, lightProjection, time, cc->depthShader);
+    auto lightProjection = ortho(-8.f, 8.f, -8.f, 8.f, 0.5f, 10.f);
+    cc->lightSpaceMatrix = lightProjection * lightView;
+    cc->DrawFirstPass(lightView, lightProjection, time, cc->depthShader);
     // ConfigureShaderAndMatrices
 
 
@@ -557,11 +562,6 @@ void Graphics::Draw() {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, cc->renderTexture);
     glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    cc->screenShader->SetUniform("clipPos", vec4(0.5f, 0.5f, 0.2f, 0.2f));
-    glBindTexture(GL_TEXTURE_2D, cc->depthMap);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-
 
     // GUI
     cc->DrawGUI(deltaTime);

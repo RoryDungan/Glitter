@@ -10,11 +10,13 @@ out VS_OUT {
     vec3 FragPos;
     vec2 Texcoord;
     mat3 TBN;
+    vec4 FragPosLightSpace;
 } vs_out;
 
 uniform mat4 model;
 uniform mat4 modelViewProjection;
 uniform mat3 modelInverseTranspose;
+uniform mat4 lightSpaceMatrix;
 
 void main()
 {
@@ -26,6 +28,8 @@ void main()
     vec3 B = normalize(modelInverseTranspose * bitangent);
     vec3 N = normalize(modelInverseTranspose * normal);
     vs_out.TBN = mat3(T, B, N);
+
+    vs_out.FragPosLightSpace = lightSpaceMatrix * vec4(vs_out.FragPos, 1.0); 
 
     gl_Position = modelViewProjection * vec4(position, 1.0);
 }

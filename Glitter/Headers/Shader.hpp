@@ -31,6 +31,7 @@ public:
     void SetupVertexAttribs(const VertexAttribInfoList& vertexAttribs);
     void ConnectUniforms(const std::vector<std::string>& uniformNames);
     void InitTextures(const std::vector<TexSettings>& textures);
+    void ConnectDepthTex(GLuint texid);
     
     GLuint Get() {
         return program;
@@ -40,6 +41,7 @@ public:
     void SetUniform(const std::string& name, float value);
     void SetUniform(const std::string& name, const glm::vec3& value);
     void SetUniform(const std::string& name, const glm::vec4& value);
+    void SetUniform(const std::string& name, const glm::mat4& value);
 
     void BindTextures();
 
