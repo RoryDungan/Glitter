@@ -11,6 +11,7 @@
 #include "FileMesh.hpp"
 #include "PlanePrimitiveMesh.hpp"
 #include "Shader.hpp"
+#include "Texture2D.hpp"
 #include "Timer.hpp"
 
 using namespace glm;
@@ -147,7 +148,8 @@ struct Graphics::CheshireCat {
     };
     mat4 lightMat = mat4(1), lightSpaceMatrix = mat4(1);
 
-    GLuint depthMapFBO = 0, depthMap;
+    GLuint depthMapFBO = 0;
+    std::unique_ptr<Texture2D> depthMap;
     std::shared_ptr<Shader> depthShader;
     float penumbraSize = 500.f;
 
@@ -163,32 +165,20 @@ struct Graphics::CheshireCat {
         // Setup depth map
         glGenFramebuffers(1, &depthMapFBO);
 
-        glGenTextures(1, &depthMap);
-        glBindTexture(GL_TEXTURE_2D, depthMap);
-        glTexImage2D(
-            GL_TEXTURE_2D, 
-            0, 
-            GL_DEPTH_COMPONENT, 
-            SHADOW_WIDTH, 
-            SHADOW_HEIGHT, 
-            0, 
-            GL_DEPTH_COMPONENT, 
-            GL_FLOAT, 
-            NULL
-        );
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-        float borderColor[] = { 1.f, 1.f, 1.f, 1.f };
-        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+        depthMap = std::make_unique<Texture2D>(
+            uvec2(SHADOW_WIDTH, SHADOW_HEIGHT),
+            Texture2D::DepthComponent,
+            Texture2D::Float);
+        depthMap->SetFiltering(Texture2D::Nearest);
+        depthMap->SetWrapMode(Texture2D::ClampToBorder);
+        depthMap->SetBorder(vec4(1.f, 1.f, 1.f, 1.f));
 
         glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
         glFramebufferTexture2D(
-            GL_FRAMEBUFFER, 
-            GL_DEPTH_ATTACHMENT, 
-            GL_TEXTURE_2D, 
-            depthMap, 
+            GL_FRAMEBUFFER,
+            GL_DEPTH_ATTACHMENT,
+            GL_TEXTURE_2D,
+            depthMap->Get(),
             0
         );
         glDrawBuffer(GL_NONE);
@@ -294,7 +284,7 @@ struct Graphics::CheshireCat {
                 }
             },
         });
-        shader->ConnectDepthTex(depthMap);
+        shader->ConnectDepthTex(depthMap->Get());
 
         CubePrimitiveMesh mesh(2.f);
         auto drawable = std::make_unique<Drawable>(mesh, shader);
@@ -346,7 +336,7 @@ struct Graphics::CheshireCat {
                 }
             },
         });
-        floorShader->ConnectDepthTex(depthMap);
+        floorShader->ConnectDepthTex(depthMap->Get());
 
         floor = std::make_unique<Drawable>(floorMesh, floorShader);
     }
