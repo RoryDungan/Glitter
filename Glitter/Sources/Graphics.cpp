@@ -159,6 +159,48 @@ struct Graphics::CheshireCat {
     std::string error;
 
 
+    void InitDepthBuffer() {
+        // Setup depth map
+        glGenFramebuffers(1, &depthMapFBO);
+
+        glGenTextures(1, &depthMap);
+        glBindTexture(GL_TEXTURE_2D, depthMap);
+        glTexImage2D(
+            GL_TEXTURE_2D, 
+            0, 
+            GL_DEPTH_COMPONENT, 
+            SHADOW_WIDTH, 
+            SHADOW_HEIGHT, 
+            0, 
+            GL_DEPTH_COMPONENT, 
+            GL_FLOAT, 
+            NULL
+        );
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        float borderColor[] = { 1.f, 1.f, 1.f, 1.f };
+        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+        glFramebufferTexture2D(
+            GL_FRAMEBUFFER, 
+            GL_DEPTH_ATTACHMENT, 
+            GL_TEXTURE_2D, 
+            depthMap, 
+            0
+        );
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        depthShader = std::make_shared<Shader>();
+        depthShader->AttachShader("depth.vert");
+        depthShader->AttachShader("depth.frag");
+        depthShader->Link();
+    }
+
     void InitScene() {
         CubePrimitiveMesh lightMesh(.1f);
         pointLightShader = std::make_shared<Shader>();
@@ -508,43 +550,7 @@ void Graphics::Init(ivec2 framebufferSize) {
 
         glEnable(GL_CULL_FACE);
 
-        // Setup depth map
-        glGenFramebuffers(1, &cc->depthMapFBO);
-
-        glGenTextures(1, &cc->depthMap);
-        glBindTexture(GL_TEXTURE_2D, cc->depthMap);
-        glTexImage2D(
-            GL_TEXTURE_2D, 
-            0, 
-            GL_DEPTH_COMPONENT, 
-            SHADOW_WIDTH, 
-            SHADOW_HEIGHT, 
-            0, 
-            GL_DEPTH_COMPONENT, 
-            GL_FLOAT, 
-            NULL
-        );
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, cc->depthMapFBO);
-        glFramebufferTexture2D(
-            GL_FRAMEBUFFER, 
-            GL_DEPTH_ATTACHMENT, 
-            GL_TEXTURE_2D, 
-            cc->depthMap, 
-            0
-        );
-        glDrawBuffer(GL_NONE);
-        glReadBuffer(GL_NONE);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-        cc->depthShader = std::make_shared<Shader>();
-        cc->depthShader->AttachShader("depth.vert");
-        cc->depthShader->AttachShader("depth.frag");
-        cc->depthShader->Link();
+        cc->InitDepthBuffer();
 
         cc->InitScene();
 
