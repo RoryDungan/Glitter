@@ -555,7 +555,7 @@ Graphics::~Graphics() {
     }
 }
 
-void Graphics::Init(ivec2 framebufferSize) {
+void Graphics::Init(uvec2 framebufferSize) {
     try {
         cc->framebufferSize = framebufferSize;
 
@@ -578,7 +578,7 @@ void Graphics::Init(ivec2 framebufferSize) {
     }
 }
 
-void Graphics::OnResize(ivec2 framebufferSize) {
+void Graphics::OnResize(uvec2 framebufferSize) {
     cc->framebufferSize = framebufferSize;
     cc->cameraProj = perspective(
         radians(45.f), 
