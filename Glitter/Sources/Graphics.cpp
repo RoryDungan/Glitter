@@ -156,7 +156,7 @@ struct Graphics::CheshireCat {
     float penumbraSize = 500.f;
 
     GLuint fbo = 0, rbo = 0, quadVAO = 0, quadVBO = 0;
-    GLuint renderTexture = 0;
+    std::shared_ptr<Texture2D> renderTexture = 0;
 
     std::unique_ptr<Shader> screenShader;
 
@@ -328,17 +328,11 @@ struct Graphics::CheshireCat {
         glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
         // create color attachment texture
-        glGenTextures(1, &renderTexture);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, renderTexture);
-
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, framebufferSize.x, framebufferSize.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        renderTexture = std::make_shared<Texture2D>(framebufferSize, Texture2D::RGB, Texture2D::UnsignedByte);
+        renderTexture->SetFiltering(Texture2D::Linear);
 
         // bind texture to framebuffer
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTexture, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTexture->Get(), 0);
 
         // Create a renderbuffer objct for depth and stencil attachment
         glGenRenderbuffers(1, &rbo);
@@ -548,9 +542,7 @@ void Graphics::OnResize(uvec2 framebufferSize) {
     );
 
     // resize renderbuffer color attachment
-    glBindTexture(GL_TEXTURE_2D, cc->renderTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, framebufferSize.x, framebufferSize.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    cc->renderTexture->Resize(framebufferSize);
 
     // resize depth attachment
     glBindRenderbuffer(GL_RENDERBUFFER, cc->rbo);
@@ -608,7 +600,7 @@ void Graphics::Draw() {
     cc->screenShader->SetUniform("clipPos", vec4(0.f, 0.f, 1.f, 1.f));
     glBindVertexArray(cc->quadVAO);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, cc->renderTexture);
+    cc->renderTexture->Bind();
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     // GUI
