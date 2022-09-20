@@ -1,11 +1,10 @@
 #include <fstream>
 #include <sstream>
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
 
 #include "Mesh.hpp"
 #include "Shader.hpp"
 
+using namespace glm;
 
 struct VertexAttribPointerSettings {
     GLint attrib;
@@ -129,7 +128,7 @@ void Shader::SetUniform(const std::string& name, float value) {
     }
 }
 
-void Shader::SetUniform(const std::string& name, const glm::vec3& value) {
+void Shader::SetUniform(const std::string& name, const vec3& value) {
     Activate();
 
     auto uniformLocation = uniforms.find(name);
@@ -143,7 +142,7 @@ void Shader::SetUniform(const std::string& name, const glm::vec3& value) {
     }
 }
 
-void Shader::SetUniform(const std::string& name, const glm::vec4& value) {
+void Shader::SetUniform(const std::string& name, const vec4& value) {
     Activate();
 
     auto uniformLocation = uniforms.find(name);
@@ -157,7 +156,7 @@ void Shader::SetUniform(const std::string& name, const glm::vec4& value) {
     }
 }
 
-void Shader::SetUniform(const std::string& name, const glm::mat4& value) {
+void Shader::SetUniform(const std::string& name, const mat4& value) {
     Activate();
 
     auto uniformLocation = uniforms.find(name);
@@ -172,7 +171,7 @@ void Shader::SetUniform(const std::string& name, const glm::mat4& value) {
 }
 
 void Shader::AddTexture(const std::string& uniformName, std::shared_ptr<Texture2D> texture) {
-    int textureUnit = textures.size();
+    int textureUnit = (int)textures.size();
     textures.push_back(texture);
     
     SetUniform(uniformName, textureUnit);

@@ -3,6 +3,7 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <filesystem>
 
 class Texture2D {
 public:
@@ -27,6 +28,7 @@ public:
         Linear
     };
 
+    Texture2D(std::filesystem::path file);
     Texture2D(glm::uvec2 size, Format format, Type type, void* data = nullptr);
 
     virtual ~Texture2D() {
@@ -67,6 +69,7 @@ private:
         case Float:
             return GL_FLOAT;
         }
+        throw std::runtime_error("Invalid texture type");
     }
 
     GLint GetGLFormat() {
@@ -78,6 +81,7 @@ private:
         case DepthComponent:
             return GL_DEPTH_COMPONENT;
         }
+        throw std::runtime_error("Invalid format");
     }
 
     void InitTexture(glm::uvec2 size, void* data);
