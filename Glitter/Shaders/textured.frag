@@ -54,10 +54,10 @@ float ShadowCalculation(vec4 fragPosLightSpace, float normalToLightAngle) {
     float currentDepth = projCoords.z;
 
     // Simple method
-//    float closestDepth = texture(shadowMap, projCoords.xy).r;
-//    return currentDepth - bias > closestDepth ? 1.0 : 0.0;
+    float closestDepth = texture(shadowMap, projCoords.xy).r;
+    return currentDepth - bias > closestDepth ? 1.0 : 0.0;
 
-    // Soft edges with multiple samples
+/*    // Soft edges with multiple samples
     float shadow = 0.0;
     float texelSize = 1.0 / penumbraSize;
     for (int x = -2; x <= 2; ++x) {
@@ -66,7 +66,7 @@ float ShadowCalculation(vec4 fragPosLightSpace, float normalToLightAngle) {
             shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
         }
     }
-    return shadow / 25.0;
+    return shadow / 25.0;*/
 }
 
 void main() {
