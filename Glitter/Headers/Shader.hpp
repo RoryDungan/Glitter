@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "Mesh.hpp"
+#include "Texture2D.hpp"
 
 struct TexSettings {
     std::filesystem::path path;
@@ -31,7 +32,7 @@ public:
     void SetupVertexAttribs(const VertexAttribInfoList& vertexAttribs);
     void ConnectUniforms(const std::vector<std::string>& uniformNames);
     void InitTextures(const std::vector<TexSettings>& textures);
-    void ConnectDepthTex(GLuint texid);
+    void AddTexture(const std::string& uniformName, std::shared_ptr<Texture2D> texture);
     
     GLuint Get() {
         return program;
@@ -52,7 +53,8 @@ private:
     static void CompileShader(GLuint shader);
 
     std::map<std::string, GLint> uniforms;
-    std::vector<GLuint> textures;
+
+    std::vector <std::shared_ptr<Texture2D>> textures;
 
     GLuint program;
 

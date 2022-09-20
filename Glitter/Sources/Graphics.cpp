@@ -4,6 +4,8 @@
 #include <imgui.h>
 #include <iostream>
 #include <stdexcept>
+#include <stb_image.h>
+#include <iostream>
 
 #include "CubePrimitiveMesh.hpp"
 #include "Drawable.hpp"
@@ -53,7 +55,7 @@ static void SetLight(Shader& shader, const Light& light, const mat4& lightSpaceM
     shader.SetUniform("penumbraSize", penumbraSize);
 }
 
-static const unsigned int SHADOW_WIDTH = 2048, SHADOW_HEIGHT = 2048;
+static const unsigned int SHADOW_WIDTH = 512, SHADOW_HEIGHT = 512;
 
 static const float kCameraDistance = 5.f;
 
@@ -149,7 +151,7 @@ struct Graphics::CheshireCat {
     mat4 lightMat = mat4(1), lightSpaceMatrix = mat4(1);
 
     GLuint depthMapFBO = 0;
-    std::unique_ptr<Texture2D> depthMap;
+    std::shared_ptr<Texture2D> depthMap;
     std::shared_ptr<Shader> depthShader;
     float penumbraSize = 500.f;
 
@@ -165,7 +167,8 @@ struct Graphics::CheshireCat {
         // Setup depth map
         glGenFramebuffers(1, &depthMapFBO);
 
-        depthMap = std::make_unique<Texture2D>(
+        std::cout << "depthMap ";
+        depthMap = std::make_shared<Texture2D>(
             uvec2(SHADOW_WIDTH, SHADOW_HEIGHT),
             Texture2D::DepthComponent,
             Texture2D::Float);
@@ -236,6 +239,8 @@ struct Graphics::CheshireCat {
         shader->AttachShader("textured.frag");
         shader->Link();
         shader->ConnectUniforms({ 
+            "material.diffuse", 
+            "material.normal", 
             "material.specular", 
             "material.shininess", 
             "light.position", 
@@ -250,41 +255,48 @@ struct Graphics::CheshireCat {
             "light.quadratic", 
             "lightSpaceMatrix",
             "penumbraSize",
+            "shadowMap"
         });
         shader->SetUniform("material.shininess", 32.f);
-        shader->InitTextures({
-            {
-                "container2.png",
-                "material.diffuse",
-                {
-                    {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
-                    {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE},
-                    {GL_TEXTURE_MIN_FILTER, GL_LINEAR},
-                    {GL_TEXTURE_MAG_FILTER, GL_LINEAR}
-                }
-            },
-            {
-                "container2_specular.png",
-                "material.specular",
-                {
-                    {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
-                    {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE},
-                    {GL_TEXTURE_MIN_FILTER, GL_LINEAR},
-                    {GL_TEXTURE_MAG_FILTER, GL_LINEAR}
-                }
-            },
-            {
-                "blue.png",
-                "material.normal",
-                {
-                    {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
-                    {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE},
-                    {GL_TEXTURE_MIN_FILTER, GL_LINEAR},
-                    {GL_TEXTURE_MAG_FILTER, GL_LINEAR}
-                }
-            },
-        });
-        shader->ConnectDepthTex(depthMap->Get());
+
+        int imgWidth, imgHeight, channelsInFile;
+        auto* textureData = stbi_load(
+            "container2.png",
+            &imgWidth,
+            &imgHeight,
+            &channelsInFile,
+            0
+        );
+        auto boxDiffuse = std::make_shared<Texture2D>(uvec2(imgWidth, imgHeight), Texture2D::RGBA, Texture2D::UnsignedByte, textureData);
+        boxDiffuse->SetWrapMode(Texture2D::ClampToEdge);
+        boxDiffuse->SetFiltering(Texture2D::Linear);
+        shader->AddTexture("material.diffuse", boxDiffuse);
+
+        textureData = stbi_load(
+            "container2_specular.png",
+            &imgWidth,
+            &imgHeight,
+            &channelsInFile,
+            0
+        );
+        auto boxSpecular = std::make_shared<Texture2D>(uvec2(imgWidth, imgHeight), Texture2D::RGBA, Texture2D::UnsignedByte, textureData);
+        boxSpecular->SetWrapMode(Texture2D::ClampToEdge);
+        boxSpecular->SetFiltering(Texture2D::Linear);
+        shader->AddTexture("material.specular", boxSpecular);
+
+        textureData = stbi_load(
+            "blue.png",
+            &imgWidth,
+            &imgHeight,
+            &channelsInFile,
+            0
+        );
+        auto boxNormalMap = std::make_shared<Texture2D>(uvec2(imgWidth, imgHeight), Texture2D::RGB, Texture2D::UnsignedByte, textureData);
+        boxNormalMap->SetWrapMode(Texture2D::ClampToEdge);
+        boxNormalMap->SetFiltering(Texture2D::Linear);
+        shader->AddTexture("material.normal", boxNormalMap);
+
+        shader->AddTexture("shadowMap", depthMap);
 
         CubePrimitiveMesh mesh(2.f);
         auto drawable = std::make_unique<Drawable>(mesh, shader);
@@ -298,6 +310,8 @@ struct Graphics::CheshireCat {
         floorShader->AttachShader("textured.frag");
         floorShader->Link();
         floorShader->ConnectUniforms({ 
+            "material.diffuse",
+            "material.normal",
             "material.specular", 
             "material.shininess", 
             "light.position", 
@@ -312,31 +326,37 @@ struct Graphics::CheshireCat {
             "light.quadratic", 
             "lightSpaceMatrix",
             "penumbraSize",
+            "shadowMap"
         });
         floorShader->SetUniform("material.shininess", 32.f);
-        floorShader->InitTextures({
-            {
-                "brickwall.jpg",
-                "material.diffuse",
-                {
-                    {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
-                    {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE},
-                    {GL_TEXTURE_MIN_FILTER, GL_LINEAR},
-                    {GL_TEXTURE_MAG_FILTER, GL_LINEAR}
-                }
-            },
-            {
-                "brickwall_normal.jpg",
-                "material.normal",
-                {
-                    {GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE},
-                    {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE},
-                    {GL_TEXTURE_MIN_FILTER, GL_LINEAR},
-                    {GL_TEXTURE_MAG_FILTER, GL_LINEAR}
-                }
-            },
-        });
-        floorShader->ConnectDepthTex(depthMap->Get());
+
+        textureData = stbi_load(
+            "brickwall.jpg",
+            &imgWidth,
+            &imgHeight,
+            &channelsInFile,
+            0
+        );
+        std::cout << "brickwall.jpg ";
+        auto floorDiffuse = std::make_shared<Texture2D>(uvec2(imgWidth, imgHeight), Texture2D::RGB, Texture2D::UnsignedByte, textureData);
+        floorDiffuse->SetWrapMode(Texture2D::ClampToEdge);
+        floorDiffuse->SetFiltering(Texture2D::Linear);
+        floorShader->AddTexture("material.diffuse", floorDiffuse);
+
+        textureData = stbi_load(
+            "brickwall_normal.jpg",
+            &imgWidth,
+            &imgHeight,
+            &channelsInFile,
+            0
+        );
+        std::cout << "brickwall_normal.jpg ";
+        auto floorNormal = std::make_shared<Texture2D>(uvec2(imgWidth, imgHeight), Texture2D::RGB, Texture2D::UnsignedByte, textureData);
+        floorNormal->SetWrapMode(Texture2D::ClampToEdge);
+        floorNormal->SetFiltering(Texture2D::Linear);
+        floorShader->AddTexture("material.normal", floorNormal);
+
+        floorShader->AddTexture("shadowMap", depthMap);
 
         floor = std::make_unique<Drawable>(floorMesh, floorShader);
     }
@@ -348,6 +368,7 @@ struct Graphics::CheshireCat {
 
         // create color attachment texture
         glGenTextures(1, &renderTexture);
+        std::cout << "generated renderTexture " << renderTexture << std::endl;
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, renderTexture);
 

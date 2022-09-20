@@ -30,6 +30,7 @@ public:
     Texture2D(glm::uvec2 size, Format format, Type type, void* data = nullptr)
         : format(format), type(type) {
         glGenTextures(1, &texture);
+
         Bind();
         InitTexture(size, data);
     }
@@ -85,18 +86,20 @@ public:
         return texture;
     }
 
+    void Bind() {
+        if (boundTexture != texture) {
+            glBindTexture(GL_TEXTURE_2D, texture);
+            boundTexture = texture;
+        }
+    }
+
+
 private:
     GLuint texture;
     static GLuint boundTexture;
 
     Type type;
     Format format;
-
-    void Bind() {
-        if (boundTexture != texture) {
-            glBindTexture(GL_TEXTURE_2D, texture);
-        }
-    }
 
     GLenum GetGLType() {
         switch (type) {

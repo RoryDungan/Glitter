@@ -106,7 +106,7 @@ void Shader::SetUniform(const std::string& name, int value) {
 
     auto uniformLocation = uniforms.find(name);
     if (uniformLocation != uniforms.end()) {
-        glUniform1iv(uniformLocation->second, 1, &value);
+        glUniform1i(uniformLocation->second, value);
     }
     else {
         std::ostringstream ss;
@@ -120,7 +120,7 @@ void Shader::SetUniform(const std::string& name, float value) {
 
     auto uniformLocation = uniforms.find(name);
     if (uniformLocation != uniforms.end()) {
-        glUniform1fv(uniformLocation->second, 1, &value);
+        glUniform1f(uniformLocation->second, value);
     }
     else {
         std::ostringstream ss;
@@ -171,56 +171,17 @@ void Shader::SetUniform(const std::string& name, const glm::mat4& value) {
     }
 }
 
-void Shader::InitTextures(const std::vector<TexSettings>& textureSettings) {
-    Activate();
-
-    textures.resize(textureSettings.size());
-    glGenTextures(textureSettings.size(), textures.data());
+void Shader::AddTexture(const std::string& uniformName, std::shared_ptr<Texture2D> texture) {
+    int textureUnit = textures.size();
+    textures.push_back(texture);
     
-    for (size_t i = 0; i < textureSettings.size(); ++i) {
-        glActiveTexture(GL_TEXTURE0 + i);
-        glBindTexture(GL_TEXTURE_2D, textures[i]);
-        
-        int imgWidth, imgHeight, channelsInFile;
-        auto str = textureSettings[i].path.string();
-        const char* f = str.c_str();
-        auto* textureData = stbi_load(
-            f,
-            &imgWidth,
-            &imgHeight,
-            &channelsInFile,
-            0
-        );
-
-        if (channelsInFile == 3) {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imgWidth, imgHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, textureData);
-        }
-        else if (channelsInFile == 4) {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imgWidth, imgHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, textureData);
-        }
-        stbi_image_free(textureData);
-        
-        glUniform1i(glGetUniformLocation(program, textureSettings[i].uniformName.c_str()), i);
-        
-        for (auto& param : textureSettings[i].params) {
-            glTexParameteri(GL_TEXTURE_2D, param.first, param.second);
-        }
-    }
-}
-
-// TODO: refactor Texture out to its own class and make this work with the same 
-// system as the other textures.
-void Shader::ConnectDepthTex(GLuint texid) {
-    unsigned int texIndex = textures.size();
-    textures.push_back(texid);
-    auto shadowMapLoc = glGetUniformLocation(program, "shadowMap");
-    glUniform1i(shadowMapLoc, texIndex);
+    SetUniform(uniformName, textureUnit);
 }
 
 void Shader::BindTextures() {
     for (size_t i = 0; i < textures.size(); ++i) {
         glActiveTexture(GL_TEXTURE0 + i);
-        glBindTexture(GL_TEXTURE_2D, textures[i]);
+        textures[i]->Bind();
     }
 }
 
