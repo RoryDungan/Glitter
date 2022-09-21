@@ -9,7 +9,7 @@ using namespace glm;
 GLuint Texture2D::boundTexture = 0;
 
 Texture2D::Texture2D(const uvec2& size, Format format, Type type, const void* data)
-    : format(format), type(type) {
+    : type(type), format(format) {
     glGenTextures(1, &texture);
     hasTexture = true;
 
