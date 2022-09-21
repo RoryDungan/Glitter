@@ -32,7 +32,9 @@ public:
     Texture2D(const glm::uvec2& size, Format format, Type type, const void* data = nullptr);
 
     virtual ~Texture2D() {
-        glDeleteTextures(1, &texture);
+        if (hasTexture) {
+            glDeleteTextures(1, &texture);
+        }
     }
 
     void Resize(const glm::uvec2& newSize);
@@ -57,6 +59,7 @@ public:
 
 private:
     GLuint texture;
+    bool hasTexture = false;
     static GLuint boundTexture;
 
     Type type;

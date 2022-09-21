@@ -366,7 +366,7 @@ struct Graphics::CheshireCat {
         }
 
         if (ImGui::TreeNode("Shadow")) {
-            ImGui::SliderFloat("Penumbra size", &penumbraSize, 1.f, 1000.f, "%.2f");
+            ImGui::SliderFloat("Penumbra size", &penumbraSize, 1.f, 2000.f, "%.2f");
             ImGui::TreePop();
         }
 
@@ -443,7 +443,7 @@ void Graphics::Draw() {
 
     auto lightView = lookAt(cc->light.position, cc->light.direction, vec3(0.f, 1.f, 0.f));
     auto lightProjection = perspective(
-        radians(cc->lightInnerCutoffDegrees + cc->lightEdgeRadiusDegrees) * 2.f,
+        radians(cc->lightInnerCutoffDegrees) * 2.f,
         (float)SHADOW_WIDTH / (float)SHADOW_HEIGHT,
         1.f,
         10.f

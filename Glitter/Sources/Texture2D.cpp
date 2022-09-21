@@ -1,4 +1,4 @@
-#include <iostream>
+#include <sstream>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
@@ -11,6 +11,7 @@ GLuint Texture2D::boundTexture = 0;
 Texture2D::Texture2D(const uvec2& size, Format format, Type type, const void* data)
     : format(format), type(type) {
     glGenTextures(1, &texture);
+    hasTexture = true;
 
     Bind();
     InitTexture(size, data);
@@ -27,8 +28,14 @@ Texture2D::Texture2D(const std::filesystem::path& path) {
         &channelsInFile,
         0
     );
+    if (textureData == nullptr) {
+        std::ostringstream ss;
+        ss << "Couldn't load image file " << path;
+        throw std::runtime_error(ss.str());
+    }
 
     glGenTextures(1, &texture);
+    hasTexture = true;
 
     if (channelsInFile == 3) {
         format = Texture2D::RGB;
