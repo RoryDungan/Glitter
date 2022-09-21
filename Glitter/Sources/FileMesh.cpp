@@ -17,7 +17,7 @@ static void staticCopyToVector(const aiVector3t<float>& vert, std::array<float, 
     dstVector[DESTOFFSET + 2] = vert.z;
 }
 
-FileMesh::FileMesh(const std::filesystem::path& filename) {
+FileMesh::FileMesh(const std::filesystem::path& filename, int index) {
     Assimp::Importer importer;
 
     const auto* scene = importer.ReadFile(filename.string(),
@@ -37,7 +37,7 @@ FileMesh::FileMesh(const std::filesystem::path& filename) {
         throw std::runtime_error(s.str());
     }
 
-    auto* mesh = scene->mMeshes[0];
+    auto* mesh = scene->mMeshes[index];
     vertices.resize(mesh->mNumVertices);
 
     for (unsigned int i = 0; i < mesh->mNumVertices; ++i) {

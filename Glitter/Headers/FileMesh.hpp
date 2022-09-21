@@ -6,7 +6,7 @@
 
 class FileMesh : public VectorMesh {
 public:
-    FileMesh(const std::filesystem::path& filename);
+    FileMesh(const std::filesystem::path& filename, int index = 0);
 
     unsigned int GetNumElements() const {
         return numElements;

@@ -1,3 +1,4 @@
+#include <iostream>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
@@ -18,6 +19,7 @@ Texture2D::Texture2D(const uvec2& size, Format format, Type type, const void* da
 Texture2D::Texture2D(const std::filesystem::path& path) {
     auto pathStr = path.string();
     int imgWidth, imgHeight, channelsInFile;
+    stbi_set_flip_vertically_on_load(true);
     auto* textureData = stbi_load(
         pathStr.c_str(),
         &imgWidth,

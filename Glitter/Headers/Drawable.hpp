@@ -11,7 +11,7 @@ class Drawable {
 public:
     Drawable(const Mesh& mesh, const std::shared_ptr<Shader> shader);
 
-    ~Drawable();
+    virtual ~Drawable();
 
     void Draw(
         const glm::mat4& model, 

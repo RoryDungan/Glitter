@@ -22,7 +22,7 @@ public:
         program = glCreateProgram();
     }
 
-    ~Shader() {
+    virtual ~Shader() {
         glDeleteProgram(program);
     }
 

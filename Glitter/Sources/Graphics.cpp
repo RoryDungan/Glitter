@@ -55,15 +55,15 @@ static void SetLight(Shader& shader, const Light& light, const mat4& lightSpaceM
     shader.SetUniform("penumbraSize", penumbraSize);
 }
 
-static const unsigned int SHADOW_WIDTH = 512, SHADOW_HEIGHT = 512;
+static const unsigned int SHADOW_WIDTH = 2048, SHADOW_HEIGHT = 2048;
 
-static const float kCameraDistance = 5.f;
+static const float kCameraDistance = 2.f;
 
 static const ImGuiColorEditFlags ColorEditFlags = ImGuiColorEditFlags_PickerHueWheel;
 
 struct Graphics::CheshireCat {
     std::unique_ptr<Timer> timer;
-    std::unique_ptr<Drawable> character;
+    std::vector<std::shared_ptr<Drawable>> characterDrawables;
     std::unique_ptr<Drawable> floor;
     std::unique_ptr<Drawable> pointLightDrawable;
 
@@ -156,16 +156,44 @@ struct Graphics::CheshireCat {
         characterDiffuse->SetFiltering(Texture2D::Linear);
         shader->AddTexture("material.diffuse", characterDiffuse);
 
-        auto boxNormalMap = std::make_shared<Texture2D>("TP_Guide_S0_NM.png");
-        boxNormalMap->SetWrapMode(Texture2D::ClampToEdge);
-        boxNormalMap->SetFiltering(Texture2D::Linear);
-        shader->AddTexture("material.normal", boxNormalMap);
+        auto characterNormalMap = std::make_shared<Texture2D>("TP_Guide_S0_NM.png");
+        characterNormalMap->SetWrapMode(Texture2D::ClampToEdge);
+        characterNormalMap->SetFiltering(Texture2D::Linear);
+        shader->AddTexture("material.normal", characterNormalMap);
+
+        auto characterSpecular = std::make_shared<Texture2D>("black.png");
+        characterSpecular->SetWrapMode(Texture2D::ClampToEdge);
+        characterSpecular->SetFiltering(Texture2D::Linear);
+        shader->AddTexture("material.specular", characterSpecular);
 
         shader->AddTexture("shadowMap", depthMap);
 
-        FileMesh mesh("Skye.obj");
-        character = std::make_unique<Drawable>(mesh, shader);
+        auto hairShader = std::make_shared<Shader>();
+        hairShader->AttachShader("drawing.vert");
+        hairShader->AttachShader("textured.frag");
+        hairShader->Link();
+        hairShader->SetUniform("material.shininess", 32.f);
+
+        auto hairDiffuse = std::make_shared<Texture2D>("TP_Guide_S0_Hair_DF.png");
+        hairDiffuse->SetWrapMode(Texture2D::ClampToEdge);
+        hairDiffuse->SetFiltering(Texture2D::Linear);
+        hairShader->AddTexture("material.diffuse", hairDiffuse);
+
+        auto hairNormalMap = std::make_shared<Texture2D>("TP_Guide_S0_Hair_NM.png");
+        hairNormalMap->SetWrapMode(Texture2D::ClampToEdge);
+        hairNormalMap->SetFiltering(Texture2D::Linear);
+        hairShader->AddTexture("material.normal", hairNormalMap);
+
+        hairShader->AddTexture("material.specular", characterSpecular);
+        hairShader->AddTexture("shadowMap", depthMap);
+
+        characterDrawables = {
+            std::make_shared<Drawable>(FileMesh("Skye.obj", 0), shader),
+            std::make_shared<Drawable>(FileMesh("Skye.obj", 1), shader),
+            std::make_shared<Drawable>(FileMesh("Skye.obj", 2), hairShader),
+        };
         sceneShaders.push_back(shader);
+        sceneShaders.push_back(hairShader);
 
 
         PlanePrimitiveMesh floorMesh(12.f);
@@ -242,10 +270,10 @@ struct Graphics::CheshireCat {
     }
 
     void InitView() {
-        auto cameraPos = vec3(kCameraDistance);
+        auto cameraPos = vec3(kCameraDistance / 3.f, kCameraDistance, kCameraDistance);
         cameraView = lookAt(
             cameraPos,
-            vec3(0.f, 0.6f, 0.f),
+            vec3(0.f, 1.3f, 0.f),
             vec3(0.f, 1.f, 0.f)
         );
         cameraProj = perspective(
@@ -280,7 +308,9 @@ struct Graphics::CheshireCat {
     void DrawFirstPass(mat4 view, mat4 proj, float time, std::shared_ptr<Shader> overrideShader = nullptr) {
         pointLightDrawable->Draw(lightMat, view, proj, overrideShader);
         // Draw character
-        character->Draw(mat4(1), view, proj, overrideShader);
+        for (auto& d : characterDrawables) {
+            d->Draw(rotate(mat4(1), radians(-90.f), vec3(0.f, 1.f, 0.f)), view, proj, overrideShader);
+        }
         
         // Draw floor
         floor->Draw(mat4(1), view, proj, overrideShader);
