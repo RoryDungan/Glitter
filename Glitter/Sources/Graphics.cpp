@@ -59,73 +59,16 @@ static const unsigned int SHADOW_WIDTH = 512, SHADOW_HEIGHT = 512;
 
 static const float kCameraDistance = 5.f;
 
-std::vector<Material> monkeyMats = {
-    {   // Emerald
-        vec3(0.0215f, 0.1745f, 0.0215f),
-        vec3(0.07568f, 0.61424f, 0.07568f),
-        vec3(0.633f, 0.727811f, 0.633f),
-        0.6f
-    },
-    {   // Jade
-        vec3(0.135f, 0.2225f, 0.0215f),
-        vec3(0.54f, 0.89f, 0.63f),
-        vec3(0.316228f),
-        0.1f
-    },
-    {   // Obsidian
-        vec3(0.05375f, 0.05f, 0.06625f),
-        vec3(0.18275f, 0.17f, 0.22525f),
-        vec3(0.332741f, 0.328634f, 0.346435f),
-        0.3f
-    },
-    {   // Pearl
-        vec3(0.25f, 0.20725f, 0.20725f),
-        vec3(1.f, 0.829f, 0.829f),
-        vec3(0.296648f),
-        0.088f
-    },
-    {   // Ruby
-        vec3(0.1745f, 0.01175f, 0.01175f),
-        vec3(0.61424f, 0.04136f, 0.04136f),
-        vec3(0.727811f, 0.626959f, 0.626959f),
-        0.06f
-    },
-    {   // Green plastic
-        vec3(0.f),
-        vec3(0.1f, 0.35f, 0.1f),
-        vec3(0.45f, 0.55f, 0.45f),
-        0.25f
-    },
-    {   // White plastic
-        vec3(0.f),
-        vec3(0.55f),
-        vec3(0.70f),
-        0.25f
-    },
-    {   // Cyan rubber
-        vec3(0.f, 0.05f, 0.05),
-        vec3(0.4f, 0.5f, 0.5),
-        vec3(0.04f, 0.7f, 0.7f),
-        0.078125f
-    },
-    {   // Yellow rubber
-        vec3(0.05f, 0.05f, 0.00f),
-        vec3(0.5f, 0.5f, 0.4f),
-        vec3(0.7f, 0.7f, 0.04f),
-        0.078125f
-    },
-};
-
 static const ImGuiColorEditFlags ColorEditFlags = ImGuiColorEditFlags_PickerHueWheel;
 
 struct Graphics::CheshireCat {
     std::unique_ptr<Timer> timer;
-    std::vector<std::unique_ptr<Drawable>> monkies;
+    std::unique_ptr<Drawable> character;
     std::unique_ptr<Drawable> floor;
     std::unique_ptr<Drawable> pointLightDrawable;
 
     std::shared_ptr<Shader> pointLightShader;
-    std::vector<std::shared_ptr<Shader>> monkeyShaders;
+    std::vector<std::shared_ptr<Shader>> sceneShaders;
     std::shared_ptr<Shader> floorShader;
 
     mat4 cameraView = mat4(), cameraProj = mat4();
@@ -202,46 +145,27 @@ struct Graphics::CheshireCat {
 
         pointLightDrawable = std::make_unique<Drawable>(lightMesh, pointLightShader);
 
-        //FileMesh monkeyMesh("suzanne.obj");
-        //for (const Material& mat : monkeyMats) {
-        //    auto shader = std::make_shared<Shader>();
-        //    shader->AttachShader("drawing.vert");
-        //    shader->AttachShader("solid-colour.frag");
-        //    shader->Link();
-        //    SetMat(*shader, mat);
-
-        //    auto drawable = std::make_unique<Drawable>(monkeyMesh, shader);
-
-        //    monkies.push_back(std::move(drawable));
-        //    monkeyShaders.push_back(shader);
-        //}
         auto shader = std::make_shared<Shader>();
         shader->AttachShader("drawing.vert");
         shader->AttachShader("textured.frag");
         shader->Link();
         shader->SetUniform("material.shininess", 32.f);
 
-        auto boxDiffuse = std::make_shared<Texture2D>("container2.png");
-        boxDiffuse->SetWrapMode(Texture2D::ClampToEdge);
-        boxDiffuse->SetFiltering(Texture2D::Linear);
-        shader->AddTexture("material.diffuse", boxDiffuse);
+        auto characterDiffuse = std::make_shared<Texture2D>("TP_Guide_S0_DF.png");
+        characterDiffuse->SetWrapMode(Texture2D::ClampToEdge);
+        characterDiffuse->SetFiltering(Texture2D::Linear);
+        shader->AddTexture("material.diffuse", characterDiffuse);
 
-        auto boxSpecular = std::make_shared<Texture2D>("container2_specular.png");
-        boxSpecular->SetWrapMode(Texture2D::ClampToEdge);
-        boxSpecular->SetFiltering(Texture2D::Linear);
-        shader->AddTexture("material.specular", boxSpecular);
-
-        auto boxNormalMap = std::make_shared<Texture2D>("blue.png");
+        auto boxNormalMap = std::make_shared<Texture2D>("TP_Guide_S0_NM.png");
         boxNormalMap->SetWrapMode(Texture2D::ClampToEdge);
         boxNormalMap->SetFiltering(Texture2D::Linear);
         shader->AddTexture("material.normal", boxNormalMap);
 
         shader->AddTexture("shadowMap", depthMap);
 
-        CubePrimitiveMesh mesh(2.f);
-        auto drawable = std::make_unique<Drawable>(mesh, shader);
-        monkies.push_back(std::move(drawable));
-        monkeyShaders.push_back(shader);
+        FileMesh mesh("Skye.obj");
+        character = std::make_unique<Drawable>(mesh, shader);
+        sceneShaders.push_back(shader);
 
 
         PlanePrimitiveMesh floorMesh(12.f);
@@ -346,7 +270,7 @@ struct Graphics::CheshireCat {
         light.cutOff = cos(radians(lightInnerCutoffDegrees));
         light.outerCutOff = cos(radians(lightInnerCutoffDegrees + lightEdgeRadiusDegrees));
 
-        for (auto shader : monkeyShaders) {
+        for (auto shader : sceneShaders) {
             SetLight(*shader, light, lightSpaceMatrix, penumbraSize);
         }
 
@@ -355,21 +279,8 @@ struct Graphics::CheshireCat {
 
     void DrawFirstPass(mat4 view, mat4 proj, float time, std::shared_ptr<Shader> overrideShader = nullptr) {
         pointLightDrawable->Draw(lightMat, view, proj, overrideShader);
-        // Draw monkeys
-        for (size_t i = 0; i < monkies.size(); ++i) {
-            const int rowSize = 3;
-            const float spacing = 2.5f;
-            auto monkeyPos = vec3(i / rowSize * spacing, 0.9f, i % rowSize * spacing) - vec3(2.5, 0, 2.5);
-
-            //auto monkeyModelMat = rotate(
-            //    translate(mat4(1.f), monkeyPos),
-            //    time * radians(10.f),
-            //    vec3(0.f, 1.f, 0.f)
-            //);
-            auto monkeyModelMat = translate(mat4(1.f), vec3(0.f, 1.0f, 0.f));
-
-            monkies[i]->Draw(monkeyModelMat, view, proj, overrideShader);
-        }
+        // Draw character
+        character->Draw(mat4(1), view, proj, overrideShader);
         
         // Draw floor
         floor->Draw(mat4(1), view, proj, overrideShader);
