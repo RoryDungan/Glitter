@@ -1,6 +1,5 @@
 #include <fstream>
 #include <sstream>
-#include <iostream>
 
 #include "Mesh.hpp"
 #include "Shader.hpp"
@@ -59,10 +58,9 @@ void Shader::FindUniforms() {
     glGetProgramiv(program, GL_ACTIVE_UNIFORM_MAX_LENGTH, &bufSize);
     glGetProgramiv(program, GL_ACTIVE_UNIFORMS, &count);
     GLchar* name = new GLchar[bufSize];
-    std::cout << "Finding uniforms..." << std::endl;
     for (int i = 0; i < count; i++) {
         glGetActiveUniform(program, (GLuint)i, bufSize, &length, &size, &type, name);
-        uniforms[std::string(name)] = i;
+        uniforms[std::string(name)] = glGetUniformLocation(program, name);
     }
     delete[] name;
 }
