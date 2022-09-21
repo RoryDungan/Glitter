@@ -199,7 +199,6 @@ struct Graphics::CheshireCat {
         pointLightShader->AttachShader("drawing.vert");
         pointLightShader->AttachShader("light.frag");
         pointLightShader->Link();
-        pointLightShader->ConnectUniforms({ "lightColor" });
 
         pointLightDrawable = std::make_unique<Drawable>(lightMesh, pointLightShader);
 
@@ -209,23 +208,6 @@ struct Graphics::CheshireCat {
         //    shader->AttachShader("drawing.vert");
         //    shader->AttachShader("solid-colour.frag");
         //    shader->Link();
-        //    shader->ConnectUniforms({ 
-        //        "material.ambient", 
-        //        "material.diffuse", 
-        //        "material.specular", 
-        //        "material.shininess",
-        //        "light.position", 
-        //        "light.direction", 
-        //        "light.cutOff", 
-        //        "light.outerCutOff", 
-        //        "light.ambient", 
-        //        "light.diffuse", 
-        //        "light.specular", 
-        //        "light.constant", 
-        //        "light.linear", 
-        //        "light.quadratic", 
-        //        "lightSpaceMatrix",
-        //    });
         //    SetMat(*shader, mat);
 
         //    auto drawable = std::make_unique<Drawable>(monkeyMesh, shader);
@@ -237,25 +219,6 @@ struct Graphics::CheshireCat {
         shader->AttachShader("drawing.vert");
         shader->AttachShader("textured.frag");
         shader->Link();
-        shader->ConnectUniforms({ 
-            "material.diffuse", 
-            "material.normal", 
-            "material.specular", 
-            "material.shininess", 
-            "light.position", 
-            "light.direction", 
-            "light.cutOff", 
-            "light.outerCutOff", 
-            "light.ambient", 
-            "light.diffuse", 
-            "light.specular", 
-            "light.constant", 
-            "light.linear", 
-            "light.quadratic", 
-            "lightSpaceMatrix",
-            "penumbraSize",
-            "shadowMap"
-        });
         shader->SetUniform("material.shininess", 32.f);
 
         auto boxDiffuse = std::make_shared<Texture2D>("container2.png");
@@ -286,25 +249,6 @@ struct Graphics::CheshireCat {
         floorShader->AttachShader("drawing.vert");
         floorShader->AttachShader("textured.frag");
         floorShader->Link();
-        floorShader->ConnectUniforms({ 
-            "material.diffuse",
-            "material.normal",
-            "material.specular", 
-            "material.shininess", 
-            "light.position", 
-            "light.direction", 
-            "light.cutOff", 
-            "light.outerCutOff", 
-            "light.ambient", 
-            "light.diffuse", 
-            "light.specular", 
-            "light.constant", 
-            "light.linear", 
-            "light.quadratic", 
-            "lightSpaceMatrix",
-            "penumbraSize",
-            "shadowMap"
-        });
         floorShader->SetUniform("material.shininess", 32.f);
 
         auto floorDiffuse = std::make_shared<Texture2D>("brickwall.jpg");
@@ -350,11 +294,6 @@ struct Graphics::CheshireCat {
         screenShader->AttachShader("framebuffer-display.vert");
         screenShader->AttachShader("framebuffer-display.frag");
         screenShader->Link();
-        screenShader->ConnectUniforms({ 
-            "screenTexture", 
-            "time", 
-            "clipPos"
-        });
         screenShader->SetUniform("screenTexture", 0);
 
         float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.

@@ -1,5 +1,6 @@
 #include <fstream>
 #include <sstream>
+#include <iostream>
 
 #include "Mesh.hpp"
 #include "Shader.hpp"
@@ -47,6 +48,23 @@ void Shader::Link() {
         msg << "Error linking program: " << buffer.data();
         throw std::runtime_error(msg.str());
     }
+
+    FindUniforms();
+}
+
+void Shader::FindUniforms() {
+    GLint count = 0, size = 0, bufSize = 0;
+    GLsizei length = 0;
+    GLenum type;
+    glGetProgramiv(program, GL_ACTIVE_UNIFORM_MAX_LENGTH, &bufSize);
+    glGetProgramiv(program, GL_ACTIVE_UNIFORMS, &count);
+    GLchar* name = new GLchar[bufSize];
+    std::cout << "Finding uniforms..." << std::endl;
+    for (int i = 0; i < count; i++) {
+        glGetActiveUniform(program, (GLuint)i, bufSize, &length, &size, &type, name);
+        uniforms[std::string(name)] = i;
+    }
+    delete[] name;
 }
 
 void Shader::Activate() {
@@ -92,25 +110,12 @@ void Shader::SetupVertexAttribs(const VertexAttribInfoList& vertexAttribs) {
     }
 }
 
-void Shader::ConnectUniforms(const std::vector<std::string>& uniformNames) {
-    Activate();
-
-    for (auto& name : uniformNames) {
-         uniforms[name] = glGetUniformLocation(program, name.c_str());
-    }
-}
-
 void Shader::SetUniform(const std::string& name, int value) {
     Activate();
 
     auto uniformLocation = uniforms.find(name);
     if (uniformLocation != uniforms.end()) {
         glUniform1i(uniformLocation->second, value);
-    }
-    else {
-        std::ostringstream ss;
-        ss << "Could not find uniform " << name << " on material.";
-        throw std::runtime_error(ss.str());
     }
 }
 
@@ -121,11 +126,6 @@ void Shader::SetUniform(const std::string& name, float value) {
     if (uniformLocation != uniforms.end()) {
         glUniform1f(uniformLocation->second, value);
     }
-    else {
-        std::ostringstream ss;
-        ss << "Could not find uniform " << name << " on material.";
-        throw std::runtime_error(ss.str());
-    }
 }
 
 void Shader::SetUniform(const std::string& name, const vec3& value) {
@@ -134,11 +134,6 @@ void Shader::SetUniform(const std::string& name, const vec3& value) {
     auto uniformLocation = uniforms.find(name);
     if (uniformLocation != uniforms.end()) {
         glUniform3fv(uniformLocation->second, 1, value_ptr(value));
-    }
-    else {
-        std::ostringstream ss;
-        ss << "Could not find uniform " << name << " on material.";
-        throw std::runtime_error(ss.str());
     }
 }
 
@@ -149,11 +144,6 @@ void Shader::SetUniform(const std::string& name, const vec4& value) {
     if (uniformLocation != uniforms.end()) {
         glUniform4fv(uniformLocation->second, 1, value_ptr(value));
     }
-    else {
-        std::ostringstream ss;
-        ss << "Could not find uniform " << name << " on material.";
-        throw std::runtime_error(ss.str());
-    }
 }
 
 void Shader::SetUniform(const std::string& name, const mat4& value) {
@@ -162,11 +152,6 @@ void Shader::SetUniform(const std::string& name, const mat4& value) {
     auto uniformLocation = uniforms.find(name);
     if (uniformLocation != uniforms.end()) {
         glUniformMatrix4fv(uniformLocation->second, 1, GL_FALSE, value_ptr(value));
-    }
-    else {
-        std::ostringstream ss;
-        ss << "Could not find uniform " << name << " on material.";
-        throw std::runtime_error(ss.str());
     }
 }
 

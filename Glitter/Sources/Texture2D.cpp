@@ -7,7 +7,7 @@ using namespace glm;
 
 GLuint Texture2D::boundTexture = 0;
 
-Texture2D::Texture2D(uvec2 size, Format format, Type type, void* data)
+Texture2D::Texture2D(const uvec2& size, Format format, Type type, const void* data)
     : format(format), type(type) {
     glGenTextures(1, &texture);
 
@@ -15,7 +15,7 @@ Texture2D::Texture2D(uvec2 size, Format format, Type type, void* data)
     InitTexture(size, data);
 }
 
-Texture2D::Texture2D(std::filesystem::path path) {
+Texture2D::Texture2D(const std::filesystem::path& path) {
     auto pathStr = path.string();
     int imgWidth, imgHeight, channelsInFile;
     auto* textureData = stbi_load(
@@ -42,7 +42,7 @@ Texture2D::Texture2D(std::filesystem::path path) {
     stbi_image_free(textureData);
 }
 
-void Texture2D::Resize(uvec2 newSize) {
+void Texture2D::Resize(const uvec2& newSize) {
     Bind();
 
     InitTexture(newSize, nullptr);
@@ -80,12 +80,12 @@ void Texture2D::SetFiltering(Filter filter) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mode);
 }
 
-void Texture2D::SetBorder(vec4 color) {
+void Texture2D::SetBorder(const vec4& color) {
     Bind();
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, value_ptr(color));
 }
 
-void Texture2D::InitTexture(uvec2 size, void* data) {
+void Texture2D::InitTexture(const uvec2& size, const void* data) {
     glTexImage2D(
         GL_TEXTURE_2D, 
         0, 

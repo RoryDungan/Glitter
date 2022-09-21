@@ -28,22 +28,22 @@ public:
         Linear
     };
 
-    Texture2D(std::filesystem::path file);
-    Texture2D(glm::uvec2 size, Format format, Type type, void* data = nullptr);
+    Texture2D(const std::filesystem::path& file);
+    Texture2D(const glm::uvec2& size, Format format, Type type, const void* data = nullptr);
 
     virtual ~Texture2D() {
         glDeleteTextures(1, &texture);
     }
 
-    void Resize(glm::uvec2 newSize);
+    void Resize(const glm::uvec2& newSize);
 
     void SetWrapMode(Wrapping wrapMode);
 
     void SetFiltering(Filter filter);
 
-    void SetBorder(glm::vec4 color);
+    void SetBorder(const glm::vec4& color);
 
-    GLuint Get() {
+    GLuint Get() const {
         return texture;
     }
 
@@ -84,6 +84,6 @@ private:
         throw std::runtime_error("Invalid format");
     }
 
-    void InitTexture(glm::uvec2 size, void* data);
+    void InitTexture(const glm::uvec2& size, const void* data);
 };
 

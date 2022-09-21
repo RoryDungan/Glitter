@@ -30,7 +30,6 @@ public:
     void Link();
     void Activate();
     void SetupVertexAttribs(const VertexAttribInfoList& vertexAttribs);
-    void ConnectUniforms(const std::vector<std::string>& uniformNames);
     void InitTextures(const std::vector<TexSettings>& textures);
     void AddTexture(const std::string& uniformName, std::shared_ptr<Texture2D> texture);
     
@@ -51,6 +50,7 @@ private:
 
     static void ReadShaderFile(GLuint shader, GLsizei count, const std::filesystem::path& path);
     static void CompileShader(GLuint shader);
+    void FindUniforms();
 
     std::map<std::string, GLint> uniforms;
 
