@@ -187,10 +187,11 @@ struct Graphics::CheshireCat {
         hairShader->AddTexture("material.specular", characterSpecular);
         hairShader->AddTexture("shadowMap", depthMap);
 
+        auto meshes = LoadFileMesh("Skye.obj");
         characterDrawables = {
-            std::make_shared<Drawable>(FileMesh("Skye.obj", 0), shader),
-            std::make_shared<Drawable>(FileMesh("Skye.obj", 1), shader),
-            std::make_shared<Drawable>(FileMesh("Skye.obj", 2), hairShader),
+            std::make_shared<Drawable>(meshes[0], shader),
+            std::make_shared<Drawable>(meshes[1], shader),
+            std::make_shared<Drawable>(meshes[2], hairShader),
         };
         sceneShaders.push_back(shader);
         sceneShaders.push_back(hairShader);

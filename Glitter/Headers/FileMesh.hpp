@@ -1,12 +1,13 @@
 #pragma once
 
 #include <filesystem>
-
 #include "VectorMesh.hpp"
+
+class aiMesh;
 
 class FileMesh : public VectorMesh {
 public:
-    FileMesh(const std::filesystem::path& filename, int index = 0);
+    FileMesh(const aiMesh* mesh);
 
     unsigned int GetNumElements() const {
         return numElements;
@@ -15,3 +16,5 @@ public:
 private:
     unsigned int numElements;
 };
+
+std::vector<FileMesh> LoadFileMesh(const std::filesystem::path& path);
