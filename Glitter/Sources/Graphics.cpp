@@ -385,13 +385,13 @@ struct Graphics::CheshireCat {
     }
 
     void DrawSkybox(mat4 view, mat4 proj) {
-        glDepthMask(GL_FALSE);
+        glDepthFunc(GL_LEQUAL);
         skyboxShader->Activate();
         skyboxShader->SetUniform("viewProjection", proj * mat4(mat3(view)));
         skyboxShader->BindTextures();
         glBindVertexArray(skyboxVAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
-        glDepthMask(GL_TRUE);
+        glDepthFunc(GL_LESS);
     }
 
     void DrawFirstPass(mat4 view, mat4 proj, float time, std::shared_ptr<Shader> overrideShader = nullptr) {
@@ -485,9 +485,9 @@ void Graphics::Init(uvec2 framebufferSize) {
         glEnable(GL_CULL_FACE);
 
         cc->InitDepthBuffer();
-        cc->InitSkybox();
         cc->InitScene();
         cc->InitFramebuffer();
+        cc->InitSkybox();
         cc->InitView();
 
         // Done!
@@ -546,16 +546,14 @@ void Graphics::Draw() {
     glBindFramebuffer(GL_FRAMEBUFFER, cc->depthMapFBO);
     glClear(GL_DEPTH_BUFFER_BIT);
     cc->DrawFirstPass(lightView, lightProjection, time, cc->depthShader);
-    // ConfigureShaderAndMatrices
-
 
     // first pass
     glViewport(0, 0, cc->framebufferSize.x, cc->framebufferSize.y);
     glBindFramebuffer(GL_FRAMEBUFFER, cc->fbo);
     glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    cc->DrawSkybox(cc->cameraView, cc->cameraProj);
     cc->DrawFirstPass(cc->cameraView, cc->cameraProj, time);
+    cc->DrawSkybox(cc->cameraView, cc->cameraProj);
 
     // second pass
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
