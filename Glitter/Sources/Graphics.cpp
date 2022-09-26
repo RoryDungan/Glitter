@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -17,6 +18,51 @@
 #include "Timer.hpp"
 
 using namespace glm;
+
+const float skyboxVertices[] = {
+    // positions          
+    -1.0f,  1.0f, -1.0f,
+    -1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+
+    -1.0f, -1.0f,  1.0f,
+    -1.0f, -1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f,  1.0f,
+    -1.0f, -1.0f,  1.0f,
+
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+
+    -1.0f, -1.0f,  1.0f,
+    -1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f, -1.0f,  1.0f,
+    -1.0f, -1.0f,  1.0f,
+
+    -1.0f,  1.0f, -1.0f,
+     1.0f,  1.0f, -1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+    -1.0f,  1.0f,  1.0f,
+    -1.0f,  1.0f, -1.0f,
+
+    -1.0f, -1.0f, -1.0f,
+    -1.0f, -1.0f,  1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+    -1.0f, -1.0f,  1.0f,
+     1.0f, -1.0f,  1.0f
+};
 
 struct Material {
     vec3 ambient, diffuse, specular;
@@ -103,8 +149,40 @@ struct Graphics::CheshireCat {
 
     std::unique_ptr<Shader> screenShader;
 
+    std::shared_ptr<Texture2D> skyboxTexture;
+    std::unique_ptr<Shader> skyboxShader;
+    GLuint skyboxVAO, skyboxVBO;
+
     std::string error;
 
+    void InitSkybox() {
+        glGenVertexArrays(1, &skyboxVAO);
+        glGenBuffers(1, &skyboxVBO);
+        glBindVertexArray(skyboxVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+        std::filesystem::path skyboxDir = "skybox";
+        std::array<std::filesystem::path, 6> textureFaces = {
+            skyboxDir / "right.jpg",
+            skyboxDir / "left.jpg",
+            skyboxDir / "top.jpg",
+            skyboxDir / "bottom.jpg",
+            skyboxDir / "front.jpg",
+            skyboxDir / "back.jpg",
+        };
+        skyboxTexture = std::make_shared<Texture2D>(textureFaces);
+        skyboxTexture->SetFiltering(Texture2D::Linear);
+        skyboxTexture->SetWrapMode(Texture2D::ClampToEdge);
+
+        skyboxShader = std::make_unique<Shader>();
+        skyboxShader->AttachShader("skybox.vert");
+        skyboxShader->AttachShader("skybox.frag");
+        skyboxShader->Link();
+        skyboxShader->AddTexture("cubemap", skyboxTexture);
+    }
 
     void InitDepthBuffer() {
         // Setup depth map
@@ -280,7 +358,7 @@ struct Graphics::CheshireCat {
         cameraProj = perspective(
             radians(45.f), 
             (float)framebufferSize.x / (float)framebufferSize.y, 
-            1.f, 
+            0.1f, 
             100.f
         );
     }
@@ -304,6 +382,16 @@ struct Graphics::CheshireCat {
         }
 
         SetLight(*floorShader, light, lightSpaceMatrix, penumbraSize);
+    }
+
+    void DrawSkybox(mat4 view, mat4 proj) {
+        glDepthMask(GL_FALSE);
+        skyboxShader->Activate();
+        skyboxShader->SetUniform("viewProjection", proj * mat4(mat3(view)));
+        skyboxShader->BindTextures();
+        glBindVertexArray(skyboxVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glDepthMask(GL_TRUE);
     }
 
     void DrawFirstPass(mat4 view, mat4 proj, float time, std::shared_ptr<Shader> overrideShader = nullptr) {
@@ -397,11 +485,9 @@ void Graphics::Init(uvec2 framebufferSize) {
         glEnable(GL_CULL_FACE);
 
         cc->InitDepthBuffer();
-
+        cc->InitSkybox();
         cc->InitScene();
-
         cc->InitFramebuffer();
-
         cc->InitView();
 
         // Done!
@@ -418,7 +504,7 @@ void Graphics::OnResize(uvec2 framebufferSize) {
     cc->cameraProj = perspective(
         radians(45.f), 
         (float)framebufferSize.x / (float)framebufferSize.y, 
-        1.f, 
+        0.1f, 
         100.f
     );
 
@@ -468,6 +554,7 @@ void Graphics::Draw() {
     glBindFramebuffer(GL_FRAMEBUFFER, cc->fbo);
     glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    cc->DrawSkybox(cc->cameraView, cc->cameraProj);
     cc->DrawFirstPass(cc->cameraView, cc->cameraProj, time);
 
     // second pass

@@ -1,9 +1,25 @@
 #pragma once
 
+#include <array>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <filesystem>
+#include <functional>
+#include <memory>
+
+struct Image {
+    int width = 0, height = 0, channels = 0;
+    unsigned char* data = nullptr;
+};
+
+typedef std::unique_ptr<Image, void(*)(Image*)> ImagePtr;
+ImagePtr LoadTexture(const std::filesystem::path& path, bool flipVertically);
+
+//void LoadTexture(
+//    const std::filesystem::path& path, 
+//    std::function<void(const unsigned char*, int, int, int)> callback
+//);
 
 class Texture2D {
 public:
@@ -28,7 +44,9 @@ public:
         Linear
     };
 
+
     Texture2D(const std::filesystem::path& file);
+    Texture2D(const std::array<std::filesystem::path, 6>& cubemapFaces);
     Texture2D(const glm::uvec2& size, Format format, Type type, const void* data = nullptr);
 
     virtual ~Texture2D() {
@@ -51,13 +69,14 @@ public:
 
     void Bind() {
         if (boundTexture != texture) {
-            glBindTexture(GL_TEXTURE_2D, texture);
+            glBindTexture(target, texture);
             boundTexture = texture;
         }
     }
 
 
 private:
+    GLenum target;
     GLuint texture;
     bool hasTexture = false;
     static GLuint boundTexture;
