@@ -8,6 +8,7 @@
 #include <stb_image.h>
 #include <iostream>
 
+#include "ArcCamera.hpp"
 #include "CubePrimitiveMesh.hpp"
 #include "Drawable.hpp"
 #include "Graphics.hpp"
@@ -125,9 +126,9 @@ struct Graphics::CheshireCat {
     std::vector<std::shared_ptr<Shader>> sceneShaders;
     std::shared_ptr<Shader> floorShader;
 
-    vec3 cameraCenter = vec3(0.f, 1.3f, 0.f);
-    float cameraYaw = 0.f, cameraPitch = 0.3f;
+    vec3 cameraCentre = vec3(0.f, 1.3f, 0.f);
     mat4 cameraView = mat4(), cameraProj = mat4();
+    ArcCamera camera;
 
     ivec2 framebufferSize;
 
@@ -164,6 +165,8 @@ struct Graphics::CheshireCat {
     GLuint skyboxVAO, skyboxVBO;
 
     std::string error;
+
+    CheshireCat() : camera(cameraCentre, kCameraDistance, 0.f, 0.2f) {}
 
     void InitSkybox() {
         glGenVertexArrays(1, &skyboxVAO);
@@ -358,18 +361,9 @@ struct Graphics::CheshireCat {
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
     }
 
-    void UpdateCameraView() {
-        auto initialPos = translate(mat4(1.f), vec3(0.f, 0.f, kCameraDistance));
-        auto pitch = rotate(identity<quat>(), -cameraPitch, vec3(1.f, 0.f, 0.f));
-        auto yaw = rotate(identity<quat>(), cameraYaw, vec3(0.f, 1.f, 0.f));
-        auto rotationMat = mat4_cast(yaw * pitch);
-        auto finalPos = translate(mat4(1.f), cameraCenter) * rotationMat * initialPos;
-        cameraView = inverse(finalPos);
-    }
-
     void InitView() {
         auto cameraPos = vec3(kCameraDistance / 3.f, kCameraDistance, kCameraDistance);
-        UpdateCameraView();
+        cameraView = camera.GetViewMatrix();
         cameraProj = perspective(
             radians(45.f), 
             (float)framebufferSize.x / (float)framebufferSize.y, 
@@ -378,7 +372,7 @@ struct Graphics::CheshireCat {
         );
     }
 
-    void UpdateScene(float time) {
+    void UpdateScene(float time, float deltaTime) {
         // Move light
         lightMat = translate(
             rotate(
@@ -398,8 +392,8 @@ struct Graphics::CheshireCat {
 
         SetLight(*floorShader, light, lightSpaceMatrix, penumbraSize);
 
-        cameraYaw = time;
-        UpdateCameraView();
+        camera.Yaw(deltaTime);
+        cameraView = camera.GetViewMatrix();
     }
 
     void DrawSkybox(mat4 view, mat4 proj) {
@@ -535,6 +529,14 @@ void Graphics::OnResize(uvec2 framebufferSize) {
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 }
 
+void Graphics::OnCursorMoved(dvec2 cursorPos) {
+    // todo
+}
+
+void Graphics::OnMouseButton(int button, int action) {
+    // todo
+}
+
 void Graphics::Draw() {
     if (!cc->error.empty()) {
         ImGui::Begin("Error");
@@ -556,7 +558,7 @@ void Graphics::Draw() {
     //auto lightProjection = ortho(-8.f, 8.f, -8.f, 8.f, 0.5f, 10.f);
     cc->lightSpaceMatrix = lightProjection * lightView;
 
-    cc->UpdateScene(time);
+    cc->UpdateScene(time, deltaTime);
 
     glEnable(GL_DEPTH_TEST);
     // depth pass

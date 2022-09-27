@@ -11,6 +11,8 @@ public:
     void Draw();
 
     void OnResize(glm::uvec2 framebufferSize);
+    void OnCursorMoved(glm::dvec2 cursorPos);
+    void OnMouseButton(int button, int action);
 
 private:
     struct CheshireCat;
