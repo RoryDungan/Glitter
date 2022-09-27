@@ -19,6 +19,14 @@
 
 using namespace glm;
 
+void PrintMatrix(char* name, mat4 mat) {
+    printf("%s matrix:\n", name);
+    printf("%.2f, %.2f, %.2f, %.2f\n", mat[0].x, mat[1].x, mat[2].x, mat[3].x);
+    printf("%.2f, %.2f, %.2f, %.2f\n", mat[0].y, mat[1].y, mat[2].y, mat[3].y);
+    printf("%.2f, %.2f, %.2f, %.2f\n", mat[0].z, mat[1].z, mat[2].z, mat[3].z);
+    printf("%.2f, %.2f, %.2f, %.2f\n", mat[0].w, mat[1].w, mat[2].w, mat[3].w);
+}
+
 const float skyboxVertices[] = {
     // positions          
     -1.0f,  1.0f, -1.0f,
@@ -117,6 +125,8 @@ struct Graphics::CheshireCat {
     std::vector<std::shared_ptr<Shader>> sceneShaders;
     std::shared_ptr<Shader> floorShader;
 
+    vec3 cameraCenter = vec3(0.f, 1.3f, 0.f);
+    float cameraYaw = 0.f, cameraPitch = 0.3f;
     mat4 cameraView = mat4(), cameraProj = mat4();
 
     ivec2 framebufferSize;
@@ -348,13 +358,18 @@ struct Graphics::CheshireCat {
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
     }
 
+    void UpdateCameraView() {
+        auto initialPos = translate(mat4(1.f), vec3(0.f, 0.f, kCameraDistance));
+        auto pitch = rotate(identity<quat>(), -cameraPitch, vec3(1.f, 0.f, 0.f));
+        auto yaw = rotate(identity<quat>(), cameraYaw, vec3(0.f, 1.f, 0.f));
+        auto rotationMat = mat4_cast(yaw * pitch);
+        auto finalPos = translate(mat4(1.f), cameraCenter) * rotationMat * initialPos;
+        cameraView = inverse(finalPos);
+    }
+
     void InitView() {
         auto cameraPos = vec3(kCameraDistance / 3.f, kCameraDistance, kCameraDistance);
-        cameraView = lookAt(
-            cameraPos,
-            vec3(0.f, 1.3f, 0.f),
-            vec3(0.f, 1.f, 0.f)
-        );
+        UpdateCameraView();
         cameraProj = perspective(
             radians(45.f), 
             (float)framebufferSize.x / (float)framebufferSize.y, 
@@ -382,6 +397,9 @@ struct Graphics::CheshireCat {
         }
 
         SetLight(*floorShader, light, lightSpaceMatrix, penumbraSize);
+
+        cameraYaw = time;
+        UpdateCameraView();
     }
 
     void DrawSkybox(mat4 view, mat4 proj) {
