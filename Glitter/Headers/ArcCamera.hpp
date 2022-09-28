@@ -5,18 +5,9 @@
 class ArcCamera {
 public:
     ArcCamera(const glm::vec3& centre, float distance, float initialPitch, float initialYaw) 
-        : centre(centre), distance(distance), pitch(initialPitch), yaw(initialYaw) {
+        : centre(centre), distance(distance), pitch(initialPitch), yaw(initialYaw) {}
 
-    }
-
-    glm::mat4 GetViewMatrix() const {
-        auto initialPos = glm::translate(glm::mat4(1.f), glm::vec3(0.f, 0.f, distance));
-        auto pitchMat = glm::rotate(glm::identity<glm::quat>(), -pitch, glm::vec3(1.f, 0.f, 0.f));
-        auto yawMat = glm::rotate(glm::identity<glm::quat>(), yaw, glm::vec3(0.f, 1.f, 0.f));
-        auto rotationMat = glm::mat4_cast(yawMat * pitchMat);
-        auto finalPos = glm::translate(glm::mat4(1.f), centre) * rotationMat * initialPos;
-        return glm::inverse(finalPos);
-    }
+    glm::mat4 GetViewMatrix() const;
 
     void Yaw(float delta) {
         yaw += delta;
