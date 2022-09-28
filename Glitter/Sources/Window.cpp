@@ -21,6 +21,8 @@ Window::Window(std::shared_ptr<Graphics> graphics, int width, int height, const 
     glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
     window = glfwCreateWindow(width, height, title, nullptr, nullptr);
     glfwSetFramebufferSizeCallback(window, Window::OnResize);
+    glfwSetCursorPosCallback(window, Window::OnCursorMoved);
+    glfwSetMouseButtonCallback(window, Window::OnMouseButton);
 
     // TODO
     // Check for Valid Context
@@ -62,10 +64,24 @@ glm::ivec2 Window::GetFramebufferSize() const {
     return size;
 }
 
+glm::dvec2 Window::GetCursorPosition() const {
+    glm::dvec2 pos;
+    glfwGetCursorPos(window, &pos.x, &pos.y);
+    return pos;
+}
+
 void Window::OnResize(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
     graphics->OnResize(glm::uvec2(width, height));
     Draw();
+}
+
+void Window::OnCursorMoved(GLFWwindow* window, double xpos, double ypos) {
+    graphics->OnCursorMoved(glm::dvec2(xpos, ypos));
+}
+
+void Window::OnMouseButton(GLFWwindow* window, int button, int action, int mods) {
+    graphics->OnMouseButton(button, action);
 }
 
 void Window::Draw() {

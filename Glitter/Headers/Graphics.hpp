@@ -7,7 +7,7 @@ class Graphics {
 public:
     Graphics(); 
     ~Graphics(); 
-    void Init(glm::uvec2 framebufferSize);
+    void Init(glm::uvec2 framebufferSize, glm::dvec2 cursorPosition);
     void Draw();
 
     void OnResize(glm::uvec2 framebufferSize);

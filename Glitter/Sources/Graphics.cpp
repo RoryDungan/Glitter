@@ -113,6 +113,7 @@ static void SetLight(Shader& shader, const Light& light, const mat4& lightSpaceM
 static const unsigned int SHADOW_WIDTH = 2048, SHADOW_HEIGHT = 2048;
 
 static const float kCameraDistance = 2.f;
+static const float kMouseSensitivity = 0.01f;
 
 static const ImGuiColorEditFlags ColorEditFlags = ImGuiColorEditFlags_PickerHueWheel;
 
@@ -129,8 +130,10 @@ struct Graphics::CheshireCat {
     vec3 cameraCentre = vec3(0.f, 1.3f, 0.f);
     mat4 cameraView = mat4(), cameraProj = mat4();
     ArcCamera camera;
+    dvec2 cursorPosition = dvec2(0.0, 0.0);
+    bool mouseClicked = false;
 
-    ivec2 framebufferSize;
+    ivec2 framebufferSize = ivec2(0, 0);
 
     vec3 lightStartPos = vec3(2.2f, 4.f, 2.f);
     float lightInnerCutoffDegrees = 35.f;
@@ -162,11 +165,13 @@ struct Graphics::CheshireCat {
 
     std::shared_ptr<Texture2D> skyboxTexture;
     std::unique_ptr<Shader> skyboxShader;
-    GLuint skyboxVAO, skyboxVBO;
+    GLuint skyboxVAO = 0, skyboxVBO = 0;
 
     std::string error;
 
-    CheshireCat() : camera(cameraCentre, kCameraDistance, 0.f, 0.2f) {}
+    CheshireCat() 
+        : camera(cameraCentre, kCameraDistance, 0.f, 0.2f) {
+    }
 
     void InitSkybox() {
         glGenVertexArrays(1, &skyboxVAO);
@@ -392,7 +397,6 @@ struct Graphics::CheshireCat {
 
         SetLight(*floorShader, light, lightSpaceMatrix, penumbraSize);
 
-        camera.Yaw(deltaTime);
         cameraView = camera.GetViewMatrix();
     }
 
@@ -490,9 +494,10 @@ Graphics::~Graphics() {
     }
 }
 
-void Graphics::Init(uvec2 framebufferSize) {
+void Graphics::Init(uvec2 framebufferSize, dvec2 cursorPosition) {
     try {
         cc->framebufferSize = framebufferSize;
+        cc->cursorPosition = cursorPosition;
 
         glEnable(GL_CULL_FACE);
 
@@ -530,11 +535,26 @@ void Graphics::OnResize(uvec2 framebufferSize) {
 }
 
 void Graphics::OnCursorMoved(dvec2 cursorPos) {
-    // todo
+    if (cc->mouseClicked) {
+        auto delta = cursorPos - cc->cursorPosition;
+        cc->camera.Yaw(-delta.x * kMouseSensitivity);
+        cc->camera.Pitch(delta.y * kMouseSensitivity);
+    }
+    cc->cursorPosition = cursorPos;
 }
 
 void Graphics::OnMouseButton(int button, int action) {
-    // todo
+    if (button == 0) {
+        if (action == 1) {
+            auto& io = ImGui::GetIO();
+            if (!io.WantCaptureMouse) {
+                cc->mouseClicked = true;
+            }
+        }
+        else if (action == 0) {
+            cc->mouseClicked = false;
+        }
+    }
 }
 
 void Graphics::Draw() {

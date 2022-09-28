@@ -12,7 +12,7 @@ int main(int argc, char * argv[]) {
     const auto height = 800;
 
     Window window(graphics, width, height, "OpenGL");
-    graphics->Init(window.GetFramebufferSize());
+    graphics->Init(window.GetFramebufferSize(), window.GetCursorPosition());
     window.LoopUntilDone();
 
     return EXIT_SUCCESS;
