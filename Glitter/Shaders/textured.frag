@@ -35,7 +35,7 @@ out vec4 outColor;
 uniform Material material;
 uniform Light light;
 
-uniform sampler2D shadowMap;
+uniform sampler2DShadow shadowMap;
 uniform float penumbraSize = 100;
 
 uniform vec3 worldSpaceCameraPos;
@@ -63,8 +63,9 @@ float ShadowCalculation(vec4 fragPosLightSpace, float normalToLightAngle) {
     const int halfNumSamples = 1;
     for (int x = -halfNumSamples; x <= halfNumSamples; ++x) {
         for (int y = -halfNumSamples; y <= halfNumSamples; ++y) {
-            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x,y) * texelSize).r;
-            shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
+            vec3 shadUV = vec3(projCoords.x, projCoords.y, currentDepth - bias);
+            float shadowDepth = texture(shadowMap, shadUV + vec3(x, y, 0) * texelSize);
+            shadow += shadowDepth;
         }
     }
     return shadow / 9;

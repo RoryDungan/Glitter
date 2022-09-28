@@ -110,7 +110,7 @@ static void SetLight(Shader& shader, const Light& light, const mat4& lightSpaceM
     shader.SetUniform("penumbraSize", penumbraSize);
 }
 
-static const unsigned int SHADOW_WIDTH = 2048, SHADOW_HEIGHT = 2048;
+static const unsigned int SHADOW_WIDTH = 512, SHADOW_HEIGHT = 512;
 
 static const float kCameraDistance = 2.f;
 static const float kMouseSensitivity = 0.01f;
@@ -127,7 +127,7 @@ struct Graphics::CheshireCat {
     std::vector<std::shared_ptr<Shader>> sceneShaders;
     std::shared_ptr<Shader> floorShader;
 
-    vec3 cameraCentre = vec3(0.f, 1.3f, 0.f);
+    vec3 cameraCentre = vec3(0.f, 1.4f, 0.f);
     mat4 cameraView = mat4(), cameraProj = mat4();
     ArcCamera camera;
     dvec2 cursorPosition = dvec2(0.0, 0.0);
@@ -210,9 +210,12 @@ struct Graphics::CheshireCat {
             uvec2(SHADOW_WIDTH, SHADOW_HEIGHT),
             Texture2D::DepthComponent,
             Texture2D::Float);
-        depthMap->SetFiltering(Texture2D::Nearest);
+        depthMap->SetFiltering(Texture2D::Linear);
         depthMap->SetWrapMode(Texture2D::ClampToBorder);
         depthMap->SetBorder(vec4(1.f, 1.f, 1.f, 1.f));
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_GREATER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+
 
         glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
         glFramebufferTexture2D(
@@ -379,10 +382,12 @@ struct Graphics::CheshireCat {
 
     void UpdateScene(float time, float deltaTime) {
         // Move light
+        auto lightRotation = rotate(
+            mat4(1.f),
+            time * radians(-20.f), vec3(0, 1, 0)
+        );
         lightMat = translate(
-            rotate(
-                mat4(1), 
-                time * radians(-20.f), vec3(0, 1, 0)), 
+            mat4(1.f), // lightRotation,
             lightStartPos
         );
         pointLightShader->SetUniform("lightColor", light.specular);
@@ -502,9 +507,9 @@ void Graphics::Init(uvec2 framebufferSize, dvec2 cursorPosition) {
         glEnable(GL_CULL_FACE);
 
         cc->InitDepthBuffer();
+        cc->InitSkybox();
         cc->InitScene();
         cc->InitFramebuffer();
-        cc->InitSkybox();
         cc->InitView();
 
         // Done!
