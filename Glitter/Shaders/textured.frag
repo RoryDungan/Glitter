@@ -108,7 +108,7 @@ void main() {
     float shadow = ShadowCalculation(fs_in.FragPosLightSpace, diff);
 
     // final light
-    vec3 result = ambient * attenuation + 
+    vec3 result = ambient +
         ((1.0 - shadow) *
             (diffuse * attenuation * intensity + specular * attenuation * intensity)
         );// + emission;
