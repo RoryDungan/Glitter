@@ -114,6 +114,7 @@ static const unsigned int SHADOW_WIDTH = 512, SHADOW_HEIGHT = 512;
 
 static const float kCameraDistance = 2.f;
 static const float kMouseSensitivity = 0.01f;
+static const float kAmbientFactor = 0.2f;
 
 static const ImGuiColorEditFlags ColorEditFlags = ImGuiColorEditFlags_PickerHueWheel;
 
@@ -144,11 +145,11 @@ struct Graphics::CheshireCat {
         cos(radians(lightInnerCutoffDegrees)),
         cos(radians(lightInnerCutoffDegrees + lightEdgeRadiusDegrees)),
 
-        vec3(0.2f),
-        vec3(1.f),
-        vec3(1.f),
+        vec3(kAmbientFactor), // ambient
+        vec3(1.f),   // diffuse
+        vec3(1.f),   // specular
 
-        //1, 0.09, 0.032 // distance 50
+        //1.f, 0.09f, 0.032f // distance 50
         1.f, 0.027f, 0.0028f // distance 160
     };
     mat4 lightMat = mat4(1), lightSpaceMatrix = mat4(1);
@@ -170,7 +171,7 @@ struct Graphics::CheshireCat {
     std::string error;
 
     CheshireCat() 
-        : camera(cameraCentre, kCameraDistance, 0.f, 0.2f) {
+        : camera(cameraCentre, kCameraDistance, 0.2f, 0.2f) {
     }
 
     void InitSkybox() {
@@ -191,7 +192,7 @@ struct Graphics::CheshireCat {
             skyboxDir / "front.jpg",
             skyboxDir / "back.jpg",
         };
-        skyboxTexture = std::make_shared<Texture2D>(textureFaces);
+        skyboxTexture = std::make_shared<Texture2D>(textureFaces, Texture2D::sRGB);
         skyboxTexture->SetFiltering(Texture2D::Linear);
         skyboxTexture->SetWrapMode(Texture2D::ClampToEdge);
 
@@ -208,6 +209,7 @@ struct Graphics::CheshireCat {
 
         depthMap = std::make_shared<Texture2D>(
             uvec2(SHADOW_WIDTH, SHADOW_HEIGHT),
+            Texture2D::LinearSpace,
             Texture2D::DepthComponent,
             Texture2D::Float);
         depthMap->SetFiltering(Texture2D::Linear);
@@ -250,17 +252,17 @@ struct Graphics::CheshireCat {
         shader->Link();
         shader->SetUniform("material.shininess", 32.f);
 
-        auto characterDiffuse = std::make_shared<Texture2D>("TP_Guide_S0_DF.png");
+        auto characterDiffuse = std::make_shared<Texture2D>("TP_Guide_S0_DF.png", Texture2D::sRGB);
         characterDiffuse->SetWrapMode(Texture2D::ClampToEdge);
         characterDiffuse->SetFiltering(Texture2D::Linear);
         shader->AddTexture("material.diffuse", characterDiffuse);
 
-        auto characterNormalMap = std::make_shared<Texture2D>("TP_Guide_S0_NM.png");
+        auto characterNormalMap = std::make_shared<Texture2D>("TP_Guide_S0_NM.png", Texture2D::LinearSpace);
         characterNormalMap->SetWrapMode(Texture2D::ClampToEdge);
         characterNormalMap->SetFiltering(Texture2D::Linear);
         shader->AddTexture("material.normal", characterNormalMap);
 
-        auto characterSpecular = std::make_shared<Texture2D>("black.png");
+        auto characterSpecular = std::make_shared<Texture2D>("black.png", Texture2D::sRGB);
         characterSpecular->SetWrapMode(Texture2D::ClampToEdge);
         characterSpecular->SetFiltering(Texture2D::Linear);
         shader->AddTexture("material.specular", characterSpecular);
@@ -273,12 +275,12 @@ struct Graphics::CheshireCat {
         hairShader->Link();
         hairShader->SetUniform("material.shininess", 32.f);
 
-        auto hairDiffuse = std::make_shared<Texture2D>("TP_Guide_S0_Hair_DF.png");
+        auto hairDiffuse = std::make_shared<Texture2D>("TP_Guide_S0_Hair_DF.png", Texture2D::sRGB);
         hairDiffuse->SetWrapMode(Texture2D::ClampToEdge);
         hairDiffuse->SetFiltering(Texture2D::Linear);
         hairShader->AddTexture("material.diffuse", hairDiffuse);
 
-        auto hairNormalMap = std::make_shared<Texture2D>("TP_Guide_S0_Hair_NM.png");
+        auto hairNormalMap = std::make_shared<Texture2D>("TP_Guide_S0_Hair_NM.png", Texture2D::LinearSpace);
         hairNormalMap->SetWrapMode(Texture2D::ClampToEdge);
         hairNormalMap->SetFiltering(Texture2D::Linear);
         hairShader->AddTexture("material.normal", hairNormalMap);
@@ -303,12 +305,12 @@ struct Graphics::CheshireCat {
         floorShader->Link();
         floorShader->SetUniform("material.shininess", 32.f);
 
-        auto floorDiffuse = std::make_shared<Texture2D>("brickwall.jpg");
+        auto floorDiffuse = std::make_shared<Texture2D>("brickwall.jpg", Texture2D::sRGB);
         floorDiffuse->SetWrapMode(Texture2D::ClampToEdge);
         floorDiffuse->SetFiltering(Texture2D::Linear);
         floorShader->AddTexture("material.diffuse", floorDiffuse);
 
-        auto floorNormal = std::make_shared<Texture2D>("brickwall_normal.jpg");
+        auto floorNormal = std::make_shared<Texture2D>("brickwall_normal.jpg", Texture2D::LinearSpace);
         floorNormal->SetWrapMode(Texture2D::ClampToEdge);
         floorNormal->SetFiltering(Texture2D::Linear);
         floorShader->AddTexture("material.normal", floorNormal);
@@ -324,7 +326,7 @@ struct Graphics::CheshireCat {
         glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
         // create color attachment texture
-        renderTexture = std::make_shared<Texture2D>(framebufferSize, Texture2D::RGB, Texture2D::UnsignedByte);
+        renderTexture = std::make_shared<Texture2D>(framebufferSize, Texture2D::LinearSpace, Texture2D::RGB, Texture2D::UnsignedByte);
         renderTexture->SetFiltering(Texture2D::Linear);
 
         // bind texture to framebuffer
@@ -437,7 +439,7 @@ struct Graphics::CheshireCat {
         light.specular.r = tempColor[0];
         light.specular.g = tempColor[1];
         light.specular.b = tempColor[2];
-        light.ambient = light.specular * 0.2f;
+        light.ambient = light.specular * kAmbientFactor;
         light.diffuse = light.specular;
 
         if (ImGui::TreeNode("Attenuation")) {
@@ -603,6 +605,7 @@ void Graphics::Draw() {
     // second pass
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDisable(GL_DEPTH_TEST);
+    glEnable(GL_FRAMEBUFFER_SRGB);
     glClearColor(1.f, 1.f, 1.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -613,6 +616,7 @@ void Graphics::Draw() {
     glActiveTexture(GL_TEXTURE0);
     cc->renderTexture->Bind();
     glDrawArrays(GL_TRIANGLES, 0, 6);
+    glDisable(GL_FRAMEBUFFER_SRGB);
 
     // GUI
     cc->DrawGUI(deltaTime);

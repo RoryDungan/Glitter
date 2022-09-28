@@ -44,10 +44,14 @@ public:
         Linear
     };
 
+    enum ColorSpace {
+        LinearSpace,
+        sRGB
+    };
 
-    Texture2D(const std::filesystem::path& file);
-    Texture2D(const std::array<std::filesystem::path, 6>& cubemapFaces);
-    Texture2D(const glm::uvec2& size, Format format, Type type, const void* data = nullptr);
+    Texture2D(const std::filesystem::path& file, ColorSpace colorSpace);
+    Texture2D(const std::array<std::filesystem::path, 6>& cubemapFaces, ColorSpace colorSpace);
+    Texture2D(const glm::uvec2& size, ColorSpace colorSpace, Format format, Type type, const void* data = nullptr);
 
     virtual ~Texture2D() {
         if (hasTexture) {
@@ -83,8 +87,9 @@ private:
 
     Type type;
     Format format;
+    ColorSpace colorSpace;
 
-    GLenum GetGLType() {
+    GLenum GetGLType() const {
         switch (type) {
         case UnsignedByte:
             return GL_UNSIGNED_BYTE;
@@ -94,7 +99,31 @@ private:
         throw std::runtime_error("Invalid texture type");
     }
 
-    GLint GetGLFormat() {
+    GLint GetGLInternalFormat() const {
+        switch (format) {
+            case RGB:
+                if (colorSpace == LinearSpace) {
+                    return GL_RGB;
+                }
+                else if (colorSpace == sRGB) {
+                    return GL_SRGB;
+                }
+                break;
+            case RGBA:
+                if (colorSpace == LinearSpace) {
+                    return GL_RGBA;
+                }
+                else if (colorSpace == sRGB) {
+                    return GL_SRGB_ALPHA;
+                }
+                break;
+            case DepthComponent:
+                return GL_DEPTH_COMPONENT;
+        }
+        throw std::runtime_error("Invalid format");
+    }
+
+    GLint GetGLFormat() const {
         switch (format) {
         case RGB:
             return GL_RGB;

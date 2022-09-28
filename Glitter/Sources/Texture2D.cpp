@@ -26,8 +26,8 @@ ImagePtr LoadTexture(const std::filesystem::path& path, bool flipVertically) {
     );
 }
 
-Texture2D::Texture2D(const uvec2& size, Format format, Type type, const void* data)
-    : target(GL_TEXTURE_2D), type(type), format(format) {
+Texture2D::Texture2D(const uvec2& size, ColorSpace colorSpace, Format format, Type type, const void* data)
+    : target(GL_TEXTURE_2D), type(type), format(format), colorSpace(colorSpace) {
     glGenTextures(1, &texture);
     hasTexture = true;
 
@@ -35,8 +35,8 @@ Texture2D::Texture2D(const uvec2& size, Format format, Type type, const void* da
     InitTexture(size, data);
 }
 
-Texture2D::Texture2D(const std::filesystem::path& path)
-    : target(GL_TEXTURE_2D) {
+Texture2D::Texture2D(const std::filesystem::path& path, ColorSpace colorSpace)
+    : target(GL_TEXTURE_2D), colorSpace(colorSpace) {
     auto img = LoadTexture(path, true);
 
     if (img->data == nullptr) {
@@ -60,8 +60,8 @@ Texture2D::Texture2D(const std::filesystem::path& path)
     InitTexture(uvec2(img->width, img->height), img->data);
 }
 
-Texture2D::Texture2D(const std::array<std::filesystem::path, 6>& cubemapFaces)
-    : target(GL_TEXTURE_CUBE_MAP), type(Texture2D::UnsignedByte), format(Texture2D::RGB) {
+Texture2D::Texture2D(const std::array<std::filesystem::path, 6>& cubemapFaces, ColorSpace colorSpace)
+    : target(GL_TEXTURE_CUBE_MAP), type(Texture2D::UnsignedByte), format(Texture2D::RGB), colorSpace(colorSpace) {
     glGenTextures(1, &texture);
     hasTexture = true;
 
@@ -71,7 +71,7 @@ Texture2D::Texture2D(const std::array<std::filesystem::path, 6>& cubemapFaces)
         glTexImage2D(
             GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
             0,
-            GL_RGB,
+            GetGLInternalFormat(),
             img->width,
             img->height,
             0,
@@ -129,7 +129,7 @@ void Texture2D::InitTexture(const uvec2& size, const void* data) {
     glTexImage2D(
         target, 
         0, 
-        GetGLFormat(),
+        GetGLInternalFormat(),
         size.x, 
         size.y, 
         0, 

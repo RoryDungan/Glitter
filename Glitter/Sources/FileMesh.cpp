@@ -43,7 +43,7 @@ std::vector<FileMesh> LoadFileMesh(const std::filesystem::path& path) {
     }
 
     std::vector<FileMesh> meshes;
-    for (int i = 0; i < scene->mNumMeshes; ++i) {
+    for (unsigned int i = 0; i < scene->mNumMeshes; ++i) {
         meshes.push_back(FileMesh(scene->mMeshes[i]));
     }
     auto t3 = std::chrono::high_resolution_clock::now();
