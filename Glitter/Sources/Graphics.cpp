@@ -176,6 +176,30 @@ struct Graphics::CheshireCat {
         : camera(cameraCentre, kCameraDistance, 0.2f, 0.2f) {
     }
 
+    ~CheshireCat() {
+        if (depthMapFBO != 0) {
+            glDeleteFramebuffers(1, &depthMapFBO);
+        }
+        if (fbo != 0) {
+            glDeleteFramebuffers(1, &fbo);
+        }
+        if (rbo != 0) {
+            glDeleteRenderbuffers(1, &rbo);
+        }
+        if (quadVAO != 0) {
+            glDeleteBuffers(1, &quadVAO);
+        }
+        if (quadVBO != 0) {
+            glDeleteBuffers(1, &quadVBO);
+        }
+        if (skyboxVBO != 0) {
+            glDeleteBuffers(1, &skyboxVBO);
+        }
+        if (skyboxVAO != 0) {
+            glDeleteVertexArrays(1, &skyboxVAO);
+        }
+    }
+
     void InitSkybox() {
         glGenVertexArrays(1, &skyboxVAO);
         glGenBuffers(1, &skyboxVBO);
@@ -497,10 +521,6 @@ Graphics::Graphics() : cc(std::make_unique<CheshireCat>()) {
 }
 
 Graphics::~Graphics() {
-    if (cc->fbo != 0) {
-        glDeleteFramebuffers(1, &cc->fbo);
-        cc->fbo = 0;
-    }
 }
 
 void Graphics::Init(uvec2 framebufferSize, dvec2 cursorPosition) {
