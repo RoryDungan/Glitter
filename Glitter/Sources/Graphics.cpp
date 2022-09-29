@@ -140,17 +140,19 @@ struct Graphics::CheshireCat {
     float lightInnerCutoffDegrees = 35.f;
     float lightEdgeRadiusDegrees = 12.f;
     Light light = {
-        lightStartPos,
-        normalize(vec3(0.f) - lightStartPos), // look towards the center of the scene
-        cos(radians(lightInnerCutoffDegrees)),
-        cos(radians(lightInnerCutoffDegrees + lightEdgeRadiusDegrees)),
+        .position = lightStartPos,
+        .direction = normalize(vec3(0.f) - lightStartPos), // look towards the center of the scene
+        .cutOff = cos(radians(lightInnerCutoffDegrees)),
+        .outerCutOff = cos(radians(lightInnerCutoffDegrees + lightEdgeRadiusDegrees)),
 
-        vec3(kAmbientFactor), // ambient
-        vec3(1.f),   // diffuse
-        vec3(1.f),   // specular
+        .ambient = vec3(kAmbientFactor),
+        .diffuse = vec3(1.f),
+        .specular = vec3(1.f),
 
         //1.f, 0.09f, 0.032f // distance 50
-        1.f, 0.027f, 0.0028f // distance 160
+        .constant = 1.f,
+        .linear = 0.027f,
+        .quadratic = 0.0028f // distance 160
     };
     mat4 lightMat = mat4(1), lightSpaceMatrix = mat4(1);
 
